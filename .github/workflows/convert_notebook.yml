@@ -31,29 +31,38 @@ jobs:
       run: |
         for notebook in $(find . -name "*.ipynb"); do  # Find all .ipynb files
           jupyter nbconvert --to script "$notebook"  # Convert to Python script
-          jupyter nbconvert --to html "$notebook"  # Convert to HTML 
+          jupyter nbconvert --to html "$notebook"  # Convert to HTML
         done
 
     - name: Commit and push changes to main branch
       run: |
         git config --global user.name 'github-actions[bot]'  # Configure Git user
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'  # Configure Git email
-        git add *.py  # Add Python scripts
-        git commit -m 'Automatically convert notebooks to Python scripts'  # Commit changes
+        git add *.py *.html *.txt  # Add Python scripts, HTML files, and text files
+        git commit -m 'Automatically convert notebooks to Python scripts and HTML'  # Commit changes
         git push  # Push changes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub token for authentication
 
+    - name: Checkout gh-pages branch
+      run: |
+        git fetch origin  # Fetch the origin
+        git checkout -b gh-pages origin/gh-pages || git checkout --orphan gh-pages  # Checkout or create gh-pages branch
+
+    - name: Copy HTML files to gh-pages branch
+      run: |
+        cp *.html .  # Copy HTML files to the current directory
+
     - name: Add remote for GitHub Pages
       run: |
-        git remote add gh-pages-remote https://github.com/MishaRubanov/MishaRubanov.github.io
+        git remote add gh-pages-remote https://github.com/MishaRubanov/MishaRubanov.github.io.git  # Add the remote for GitHub Pages
 
     - name: Commit and push changes to gh-pages branch
       run: |
         git config --global user.name 'github-actions[bot]'  # Configure Git user
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'  # Configure Git email
-        git add ./*.html  # Add HTML files
+        git add *.py *.html *.txt  # Add Python scripts, HTML files, and text files
         git commit -m 'Deploy HTML files to GitHub Pages'  # Commit changes
-        git push gh-pages-remote main  # Push changes to gh-pages branch on the remote
+        git push gh-pages-remote gh-pages  # Push changes to gh-pages branch on the remote
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub token for authentication

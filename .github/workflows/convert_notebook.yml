@@ -1,0 +1,39 @@
+name: Convert Notebook
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'  # Specify the Python version you need
+
+    - name: Install nbconvert
+      run: |
+        python -m pip install --upgrade pip
+        pip install nbconvert
+
+    - name: Convert notebook to Python script and HTML
+      run: |
+        jupyter nbconvert --to script tattoo.ipynb
+        jupyter nbconvert --to html tattoo.ipynb
+
+    - name: Commit and push changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add tattoo.py tattoo.html
+        git commit -m 'Automatically convert tattoo.ipynb to tattoo.py and tattoo.html'
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

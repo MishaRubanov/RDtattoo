@@ -3,56 +3,66 @@ name: Convert Notebooks and Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main
+      - main  # Trigger the workflow on push to the main branch
 
 jobs:
   convert:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2  # Check out the repository
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v2  # Set up Python
       with:
-        python-version: '3.12'  
+        python-version: '3.12'  # Specify the Python version
 
-    - name: Install nbconvert
+    - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install nbconvert
+        python -m pip install --upgrade pip  # Upgrade pip
+        pip install nbconvert ipykernel  # Install nbconvert and ipykernel
+
+    - name: Install Jupyter kernel
+      run: |
+        python -m ipykernel install --user --name=python3  # Install the python3 kernel
 
     - name: Convert notebooks to Python scripts and HTML
       run: |
-        for notebook in $(find . -name "*.ipynb"); do
-          jupyter nbconvert --to script "$notebook"
-          jupyter nbconvert --to html "$notebook" --theme dark #add --execute to run
+        for notebook in $(find . -name "*.ipynb"); do  # Find all .ipynb files
+          jupyter nbconvert --to script "$notebook"  # Convert to Python script
+          jupyter nbconvert --execute --to html "$notebook"  # Convert to HTML and execute
         done
 
     - name: Commit and push changes to main branch
       run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add *.py
-        git commit -m 'Automatically convert notebooks to Python scripts and HTML'
-        git push
+        git config --global user.name 'github-actions[bot]'  # Configure Git user
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'  # Configure Git email
+        git add *.py  # Add Python scripts
+        git commit -m 'Automatically convert notebooks to Python scripts'  # Commit changes
+        git push  # Push changes
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub token for authentication
 
     - name: Checkout gh-pages branch
       run: |
-        git fetch origin
-        git checkout -b gh-pages origin/gh-pages || git checkout --orphan gh-pages
+        git fetch origin  # Fetch the origin
+        git checkout -b gh-pages origin/gh-pages || git checkout --orphan gh-pages  # Checkout or create gh-pages branch
 
     - name: Copy HTML files to gh-pages branch
       run: |
-        cp *.html .
+        cp *.html .  # Copy HTML files to the current directory
+
+    - name: Add remote for GitHub Pages
+      run: |
+        git remote add gh-pages-remote https://github.com/MishaRubanov/MishaRubanov.github.io  # Add the remote for GitHub Pages
 
     - name: Commit and push changes to gh-pages branch
       run: |
-        git add *.html  # Adjust the path as needed
-        git commit -m 'Deploy HTML files to GitHub Pages'
-        git push origin gh-pages
+        git config --global user.name 'github-actions[bot]'  # Configure Git user
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'  # Configure Git email
+        git add ./*.html  # Add HTML files
+        git commit -m 'Deploy HTML files to GitHub Pages'  # Commit changes
+        git push gh-pages-remote gh-pages  # Push changes to gh-pages branch on the remote
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub token for authentication

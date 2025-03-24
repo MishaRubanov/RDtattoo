@@ -1,4 +1,4 @@
-name: Convert Notebooks
+name: Convert Notebooks and Deploy to GitHub Pages
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.12.2'  
+        python-version: '3.12'  
 
     - name: Install nbconvert
       run: |
@@ -27,15 +27,32 @@ jobs:
       run: |
         for notebook in $(find . -name "*.ipynb"); do
           jupyter nbconvert --to script "$notebook"
-          jupyter nbconvert --to html "$notebook"
+          jupyter nbconvert --to html "$notebook" --theme dark #add --execute to run
         done
 
-    - name: Commit and push changes
+    - name: Commit and push changes to main branch
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add *.py *.html
+        git add *.py
         git commit -m 'Automatically convert notebooks to Python scripts and HTML'
         git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Checkout gh-pages branch
+      run: |
+        git fetch origin
+        git checkout -b gh-pages origin/gh-pages || git checkout --orphan gh-pages
+
+    - name: Copy HTML files to gh-pages branch
+      run: |
+        cp *.html .
+
+    - name: Commit and push changes to gh-pages branch
+      run: |
+        git add *.html  # Adjust the path as needed
+        git commit -m 'Deploy HTML files to GitHub Pages'
+        git push origin gh-pages
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

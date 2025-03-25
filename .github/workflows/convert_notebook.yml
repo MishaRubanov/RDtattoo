@@ -21,11 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip  # Upgrade pip
-        pip install nbconvert ipykernel  # Install nbconvert and ipykernel
-
-    - name: Install Jupyter kernel
-      run: |
-        python -m ipykernel install --user --name=python3  # Install the python3 kernel
+        pip install nbconvert 
 
     - name: Convert notebooks to Python scripts and HTML
       run: |
@@ -47,7 +43,7 @@ jobs:
     - name: Push generated webpage to another repository
       uses: nkoppel/push-files-to-another-repository@v1.1.4
       env:
-        API_TOKEN_GITHUB: ${{ secrets.GITHUB_TOKEN }}
+        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
         source-files: '/*.html'
         destination-username: 'MishaRubanov'

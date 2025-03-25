@@ -1,4 +1,4 @@
-name: Convert Notebooks and Deploy to GitHub Pages
+name: Convert Notebooks into .html and .py
 
 on:
   push:

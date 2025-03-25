@@ -47,6 +47,7 @@ jobs:
       with:
         source-files: '/*.html'
         destination-username: 'MishaRubanov'
+        destination-branch: main
         destination-repository: 'MishaRubanov.github.io'
         destination-directory: '/'
         commit-email: 'misha.rubanov.1@gmail.com'

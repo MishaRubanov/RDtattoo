@@ -43,3 +43,14 @@ jobs:
         git push  # Push changes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub token for authentication
+
+    - name: Push generated webpage to another repository
+      uses: nkoppel/push-files-to-another-repository@v1.1.4
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        source-files: '/*.html'
+        destination-username: 'MishaRubanov'
+        destination-repository: 'MishaRubanov.github.io'
+        destination-directory: '/'
+        commit-email: 'misha.rubanov.1@gmail.com'

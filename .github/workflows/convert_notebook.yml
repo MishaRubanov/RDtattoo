@@ -45,7 +45,7 @@ jobs:
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
-        source-files: '/*.html'
+        source-files: '*.html'
         destination-username: 'MishaRubanov'
         destination-branch: main
         destination-repository: 'MishaRubanov.github.io'

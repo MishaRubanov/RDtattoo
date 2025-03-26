@@ -34,7 +34,7 @@ jobs:
       run: |
         git config --global user.name 'github-actions[bot]'  # Configure Git user
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'  # Configure Git email
-        git add *.py *.html *.txt  # Add Python scripts, HTML files, and text files
+        git add *.py *.html  # Add Python scripts, HTML files
         git commit -m 'Automatically convert notebooks to Python scripts and HTML'  # Commit changes
         git push  # Push changes
       env:
@@ -49,5 +49,5 @@ jobs:
         destination-username: 'MishaRubanov'
         destination-branch: main
         destination-repository: 'MishaRubanov.github.io'
-        destination-directory: '/'
+        destination-directory: '/jupyter'
         commit-email: 'misha.rubanov.1@gmail.com'

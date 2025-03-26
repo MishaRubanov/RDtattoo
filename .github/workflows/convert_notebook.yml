@@ -27,7 +27,7 @@ jobs:
       run: |
         for notebook in $(find . -name "*.ipynb"); do  # Find all .ipynb files
           jupyter nbconvert --to script "$notebook"  # Convert to Python script
-          jupyter nbconvert --to html "$notebook"  # Convert to HTML
+          jupyter nbconvert --to html "$notebook"  --theme=dark
         done
 
     - name: Commit and push changes to main branch

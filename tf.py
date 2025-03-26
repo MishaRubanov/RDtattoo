@@ -41,7 +41,9 @@ def generate_2random_2darrays(
 #     ) / (dx**2)
 
 
-def laplacian2Dconv(a: npt.NDArray[np.float64], dx: float):
+def laplacian2Dconv(
+    a: npt.NDArray[np.float64], dx: float
+) -> np.ndarray[tuple[int, ...], np.dtype[np.floating[Any]]]:
     # Laplacian kernel
     laplacian_kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
 
@@ -66,3 +68,6 @@ class RDSimulatorBase(BaseModel):
     width: int
     height: int
     steps: int
+
+    def __post_init__(self):
+        self.a, self.b = generate_2random_2darrays(self.height, self.width)

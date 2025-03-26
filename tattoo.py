@@ -14,17 +14,16 @@ width = 500
 dx = 1
 dt = 0.001
 
-
 # In[3]:
 
 
 def normalize(image):
     """
     Normalize the image to have values between 0 and 1.
-
+    
     Parameters:
     image (numpy.ndarray): The input image to be normalized.
-
+    
     Returns:
     numpy.ndarray: The normalized image.
     """
@@ -32,7 +31,6 @@ def normalize(image):
     max_val = image.max()
     normalized_image = (image - min_val) / (max_val - min_val)
     return normalized_image
-
 
 # In[4]:
 
@@ -92,14 +90,14 @@ class BaseStateSystem:
         anim = animation.FuncAnimation(fig, step, frames=np.arange(n_steps), interval=20)
         anim.save(filename=filename, dpi=60, fps=10, writer='imagemagick')
         plt.close()
-
+        
     def plot_evolution_outcome(self, filename, n_steps):
         """
         Evolves and save the outcome of evolving the system for n_steps
         """
         self.initialise()
         fig, ax = self.initialise_figure()
-
+        
         for _ in range(n_steps):
             self.update()
 
@@ -112,7 +110,7 @@ class TwoDimensionalRDEquations(BaseStateSystem):
                  initialiser=random_initialiser,
                  width=1000, height=1000,
                  dx=1, dt=0.1, steps=1):
-
+        
         self.Da = Da
         self.Db = Db
         self.Ra = Ra
@@ -125,18 +123,18 @@ class TwoDimensionalRDEquations(BaseStateSystem):
         self.dx = dx
         self.dt = dt
         self.steps = steps
-
+        
     def initialise(self):
         self.t = 0
         self.a, self.b = self.initialiser(self.shape)
-
+        
     def update(self):
         for _ in range(self.steps):
             self.t += self.dt
             self._update()
 
     def _update(self):
-
+        
         # unpack so we don't have to keep writing "self"
         a,b,Da,Db,Ra,Rb,dt,dx = (
             self.a, self.b,
@@ -144,31 +142,31 @@ class TwoDimensionalRDEquations(BaseStateSystem):
             self.Ra, self.Rb,
             self.dt, self.dx
         )
-
+        
         La = laplacian2D(a, dx)
         Lb = laplacian2D(b, dx)
-
+        
         delta_a = dt * (Da * La + Ra(a,b))
         delta_b = dt * (Db * Lb + Rb(a,b))
-
+        
         self.a += delta_a
         self.b += delta_b
-
+        
     def draw(self, ax):
         ax[0].clear()
         ax[1].clear()
 
         ax[0].imshow(self.a, cmap='jet')
         ax[1].imshow(self.b, cmap='brg')
-
-
+        
+        
         ax[0].set_title("A, t = {:.2f}".format(self.t))
         ax[1].set_title("B, t = {:.2f}".format(self.t))
-
+        
     def initialise_figure(self):
         fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(12,6))
         return fig, ax
-
+    
 
 def Ra(a,b): return a - a ** 3 - b + alpha
 def Rb(a,b): return (a - b) * beta
@@ -184,7 +182,6 @@ rd.plot_evolution_outcome("2dRD.png", n_steps=150)
 plt.imshow(normalize(rd.a)*255)
 plt.colorbar()
 
-
 # In[7]:
 
 
@@ -196,10 +193,10 @@ from typing import Tuple
 def normalize(image: np.ndarray) -> np.ndarray:
     """
     Normalize the image to have values between 0 and 1.
-
+    
     Parameters:
     image (numpy.ndarray): The input image to be normalized.
-
+    
     Returns:
     numpy.ndarray: The normalized image.
     """
@@ -211,19 +208,19 @@ def normalize(image: np.ndarray) -> np.ndarray:
 def generate_halftone(input_image: np.ndarray, dot_size: int = 10, ellipse_ratio: float = 0.5, chaos_factor: float = 0.5) -> Image:
     """
     Generate a halftone-like version of the input image with a chaotic pattern.
-
+    
     Parameters:
     input_image (np.ndarray): The input image to be converted to halftone.
     dot_size (int): The size of the dots in the halftone pattern.
     ellipse_ratio (float): The ratio of the ellipse's height to its width.
     chaos_factor (float): The factor determining the randomness of the ellipse centers.
-
+    
     Returns:
     PIL.Image: The halftone image.
     """
     # Normalize the input image to have values between 0 and 1
     normalized_image = normalize(input_image)
-
+    
     # Convert the normalized image to a PIL image
     image = Image.fromarray((normalized_image * 255).astype(np.uint8)).convert('L')
     width, height = image.size
@@ -274,10 +271,10 @@ from typing import Tuple
 def normalize(image: np.ndarray) -> np.ndarray:
     """
     Normalize the image to have values between 0 and 1.
-
+    
     Parameters:
     image (numpy.ndarray): The input image to be normalized.
-
+    
     Returns:
     numpy.ndarray: The normalized image.
     """
@@ -289,18 +286,18 @@ def normalize(image: np.ndarray) -> np.ndarray:
 def generate_halftone(input_image: np.ndarray, dot_size: int = 10, chaos_factor: float = 0.5, divide: float =4) -> Image:
     """
     Generate a halftone-like version of the input image with a chaotic pattern using squares.
-
+    
     Parameters:
     input_image (np.ndarray): The input image to be converted to halftone.
     dot_size (int): The size of the dots in the halftone pattern.
     chaos_factor (float): The factor determining the randomness of the square centers.
-
+    
     Returns:
     PIL.Image: The halftone image.
     """
     # Normalize the input image to have values between 0 and 1
     normalized_image = normalize(input_image)
-
+    
     # Convert the normalized image to a PIL image
     image = Image.fromarray((normalized_image * 255).astype(np.uint8)).convert('L')
     width, height = image.size
@@ -342,22 +339,19 @@ plt.figure(dpi=150)
 plt.imshow(halftone_image, cmap="Greys_r")
 plt.show()
 
-
 # In[14]:
 
 
 halftone_image = Image.new('L', (100, 100), 255)
 draw = ImageDraw.Draw(halftone_image)
-get_ipython().run_line_magic('pinfo2', 'draw.ellipse')
-
+draw.ellipse??
 
 # In[ ]:
 
 
 halftone_image = Image.new('L', (100, 100), 255)
 draw = ImageDraw.Draw(halftone_image)
-get_ipython().run_line_magic('pinfo2', 'draw.ellipse')
-
+draw.ellipse??
 
 # In[ ]:
 
@@ -385,9 +379,7 @@ v.add_image(im_2)
 
 696*2
 
-
 # In[ ]:
-
 
 
 

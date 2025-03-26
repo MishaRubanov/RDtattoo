@@ -35,6 +35,9 @@ jobs:
   push:
     runs-on: ubuntu-latest  
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2  # Ensure we are in the root of the repository
+
     - name: Commit and push changes to main branch
       run: |
         git config --global user.name 'github-actions[bot]'  # Configure Git user

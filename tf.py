@@ -1,12 +1,16 @@
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 import numpy.typing as npt
 import scipy
 from pydantic import BaseModel
 
+FloatType = npt.NDArray[np.float64]
 
-def normalize(image: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+FloatFunction = Callable[[FloatType, FloatType], FloatType]
+
+
+def normalize(image: FloatType) -> FloatType:
     """
     Normalize the image to have values between 0 and 1.
 
@@ -22,9 +26,7 @@ def normalize(image: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     return normalized_image
 
 
-def generate_2random_2darrays(
-    height: int, width: int
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+def generate_2random_2darrays(height: int, width: int) -> tuple[FloatType, FloatType]:
     return (
         np.random.normal(loc=0, scale=0.05, size=(height, width)),
         np.random.normal(loc=0, scale=0.05, size=(height, width)),
@@ -41,7 +43,7 @@ def generate_2random_2darrays(
 #     ) / (dx**2)
 
 
-def laplacian2D(a: npt.NDArray[np.float64], dx: float) -> npt.NDArray[np.float64]:
+def laplacian2D(a: FloatType, dx: float) -> FloatType:
     # Laplacian kernel
     laplacian_kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
 
@@ -59,6 +61,8 @@ def laplacian2D(a: npt.NDArray[np.float64], dx: float) -> npt.NDArray[np.float64
 class RDSimulatorBase(BaseModel):
     Da: float
     Db: float
+    Ra: FloatFunction
+    Rb: FloatFunction
     alpha: float
     beta: float
     dx: float

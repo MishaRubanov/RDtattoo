@@ -1,16 +1,18 @@
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
+import matplotlib
+import matplotlib.axes
 import numpy as np
 import numpy.typing as npt
 import scipy
 from pydantic import BaseModel
 
-FloatType = npt.NDArray[np.float64]
+FloatArrayType = npt.NDArray[np.number[Any, float]]
 
-FloatFunction = Callable[[FloatType, FloatType], FloatType]
+FloatFunction = Callable[[FloatArrayType, FloatArrayType], FloatArrayType]
 
 
-def normalize(image: FloatType) -> FloatType:
+def normalize(image: FloatArrayType) -> FloatArrayType:
     """
     Normalize the image to have values between 0 and 1.
 
@@ -26,7 +28,9 @@ def normalize(image: FloatType) -> FloatType:
     return normalized_image
 
 
-def generate_2random_2darrays(height: int, width: int) -> tuple[FloatType, FloatType]:
+def generate_2random_2darrays(
+    height: int, width: int
+) -> tuple[FloatArrayType, FloatArrayType]:
     return (
         np.random.normal(loc=0, scale=0.05, size=(height, width)),
         np.random.normal(loc=0, scale=0.05, size=(height, width)),
@@ -43,19 +47,19 @@ def generate_2random_2darrays(height: int, width: int) -> tuple[FloatType, Float
 #     ) / (dx**2)
 
 
-def laplacian2D(a: FloatType, dx: float) -> FloatType:
+def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
     # Laplacian kernel
     laplacian_kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
 
     # Convolve the input array with the Laplacian kernel
-    laplacian_a: npt.NDArray[np.floating[Any]] = scipy.ndimage.convolve(
+    laplacian_a: FloatArrayType = scipy.ndimage.convolve(
         a, laplacian_kernel, mode="reflect"
     )
 
     # Normalize by dx^2
-    laplacian_a /= dx**2
+    laplacian_a = laplacian_a / dx**2
 
-    return laplacian_a.astype(np.float64)
+    return laplacian_a
 
 
 class RDSimulatorBase(BaseModel):
@@ -70,6 +74,8 @@ class RDSimulatorBase(BaseModel):
     width: int
     height: int
     steps: int
+    a: Optional[FloatArrayType] = None
+    b: Optional[FloatArrayType] = None
 
     def __post_init__(self):
         self.t = 0
@@ -86,6 +92,23 @@ class RDSimulatorBase(BaseModel):
 
         delta_a = self.dt * (self.Da * La + self.Ra(self.a, self.b))
         delta_b = self.dt * (self.Db * Lb + self.Rb(self.a, self.b))
-
         self.a += delta_a
         self.b += delta_b
+
+    def draw(self, ax: tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]):
+        ax[0].clear()
+        ax[1].clear()
+        assert type(self.a) is FloatArrayType
+        assert type(self.b) is FloatArrayType
+        assert isinstance(self.a, np.ndarray), "self.a must be a numpy array"
+        assert isinstance(self.b, np.ndarray), "self.b must be a numpy array"
+
+        ax[0].imshow(self.a, cmap="jet")
+        ax[1].imshow(self.b, cmap="brg")
+
+        ax[0].set_title("A, t = {:.2f}".format(self.t))
+        ax[1].set_title("B, t = {:.2f}".format(self.t))
+
+    def initialise_figure(self):
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+        return fig, ax

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 
 import matplotlib
 import matplotlib.axes
@@ -7,7 +7,7 @@ import numpy.typing as npt
 import scipy
 from pydantic import BaseModel
 
-FloatArrayType = npt.NDArray[np.number[Any, float]]
+FloatArrayType = npt.NDArray[np.float64]
 
 FloatFunction = Callable[[FloatArrayType, FloatArrayType], FloatArrayType]
 

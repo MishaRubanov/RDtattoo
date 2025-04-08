@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Callable, Optional
 
 import matplotlib
@@ -85,8 +86,6 @@ class RDSimulatorBase(BaseModel):
     width: int
     height: int
     steps: int
-    a: Optional[FloatArrayType] = None
-    b: Optional[FloatArrayType] = None
 
     def __post_init__(self):
         self.t = 0
@@ -125,3 +124,16 @@ class RDSimulatorBase(BaseModel):
     def initialise_figure(self):
         fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))  # type: ignore[reportUnknownMemberType]
         return fig, ax
+
+    def plot_evolution_outcome(self, filename: Path, n_steps: int):
+        """
+        Evolves and save the outcome of evolving the system for n_steps
+        """
+        fig, ax = self.initialise_figure()
+
+        for _ in range(n_steps):
+            self.update()
+
+        self.draw(ax)
+        fig.savefig(filename)  # type: ignore[reportUnknownMemberType]
+        plt.close()

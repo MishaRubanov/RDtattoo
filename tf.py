@@ -4,13 +4,13 @@ import matplotlib
 import matplotlib.axes
 import numpy as np
 import numpy.typing as npt
-import scipy
+import scipy  # type: ignore[import]
 from matplotlib import pyplot as plt
 from pydantic import BaseModel
 
 FloatArrayType = npt.NDArray[np.float64]
 
-FloatFunction = Callable[[FloatArrayType, FloatArrayType], FloatArrayType]
+FloatFunction = Callable[[FloatArrayType, FloatArrayType, float], FloatArrayType]
 
 
 def normalize(image: FloatArrayType) -> FloatArrayType:
@@ -63,6 +63,16 @@ def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
     return laplacian_b
 
 
+def Ra(a: FloatArrayType, b: FloatArrayType, alpha: float) -> FloatArrayType:
+    r: FloatArrayType = a - a**3 - b + alpha
+    return r
+
+
+def Rb(a: FloatArrayType, b: FloatArrayType, beta: float) -> FloatArrayType:
+    r: FloatArrayType = (a - b) * beta
+    return r
+
+
 class RDSimulatorBase(BaseModel):
     Da: float
     Db: float
@@ -93,8 +103,8 @@ class RDSimulatorBase(BaseModel):
         La = laplacian2D(self.a, self.dx)
         Lb = laplacian2D(self.b, self.dx)
 
-        delta_a = self.dt * (self.Da * La + self.Ra(self.a, self.b))
-        delta_b = self.dt * (self.Db * Lb + self.Rb(self.a, self.b))
+        delta_a = self.dt * (self.Da * La + self.Ra(self.a, self.b, self.alpha))
+        delta_b = self.dt * (self.Db * Lb + self.Rb(self.a, self.b, self.beta))
         self.a += delta_a
         self.b += delta_b
 

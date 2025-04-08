@@ -5,6 +5,7 @@ import matplotlib.axes
 import numpy as np
 import numpy.typing as npt
 import scipy
+from matplotlib import pyplot as plt
 from pydantic import BaseModel
 
 FloatArrayType = npt.NDArray[np.float64]
@@ -57,9 +58,9 @@ def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
     )
 
     # Normalize by dx^2
-    laplacian_a = laplacian_a / dx**2
+    laplacian_b: FloatArrayType = (laplacian_a / dx**2).astype(np.float64)
 
-    return laplacian_a
+    return laplacian_b
 
 
 class RDSimulatorBase(BaseModel):
@@ -87,6 +88,8 @@ class RDSimulatorBase(BaseModel):
             self._update()
 
     def _update(self):
+        assert self.a is not None
+        assert self.b is not None
         La = laplacian2D(self.a, self.dx)
         Lb = laplacian2D(self.b, self.dx)
 
@@ -103,12 +106,12 @@ class RDSimulatorBase(BaseModel):
         assert isinstance(self.a, np.ndarray), "self.a must be a numpy array"
         assert isinstance(self.b, np.ndarray), "self.b must be a numpy array"
 
-        ax[0].imshow(self.a, cmap="jet")
-        ax[1].imshow(self.b, cmap="brg")
+        ax[0].imshow(X=self.a, dtype=np.float64, cmap="jet")  # type: ignore[reportUnknownMemberType]
+        ax[1].imshow(self.b, cmap="brg")  # type: ignore[reportUnknownMemberType]
 
-        ax[0].set_title("A, t = {:.2f}".format(self.t))
-        ax[1].set_title("B, t = {:.2f}".format(self.t))
+        ax[0].set_title("A, t = {:.2f}".format(self.t))  # type: ignore[reportUnknownMemberType]
+        ax[1].set_title("B, t = {:.2f}".format(self.t))  # type: ignore[reportUnknownMemberType]
 
     def initialise_figure(self):
-        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))  # type: ignore[reportUnknownMemberType]
         return fig, ax

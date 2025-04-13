@@ -112,12 +112,10 @@ class RDSimulatorBase(BaseModel):
     def draw(self, ax: tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]):
         ax[0].clear()
         ax[1].clear()
-        assert type(self._a) is FloatArrayType
-        assert type(self._b) is FloatArrayType
         assert isinstance(self._a, np.ndarray), "self._a must be a numpy array"
         assert isinstance(self._b, np.ndarray), "self._b must be a numpy array"
 
-        ax[0].imshow(X=self._a, dtype=np.float64, cmap="jet")  # type: ignore[reportUnknownMemberType]
+        ax[0].imshow(X=self._a, cmap="jet")  # type: ignore[reportUnknownMemberType]
         ax[1].imshow(self._b, cmap="brg")  # type: ignore[reportUnknownMemberType]
 
         ax[0].set_title("A, t = {:.2f}".format(self.t))  # type: ignore[reportUnknownMemberType]

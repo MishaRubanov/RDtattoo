@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import matplotlib
 import matplotlib.axes
@@ -86,9 +86,11 @@ class RDSimulatorBase(BaseModel):
     width: int
     height: int
     steps: int
+    t: float = 0
+    a: FloatArrayType
+    b: FloatArrayType
 
-    def __post_init__(self):
-        self.t = 0
+    def model_post_init(self, __context: Any) -> None:
         self.a, self.b = generate_2random_2darrays(self.height, self.width)
 
     def update(self):

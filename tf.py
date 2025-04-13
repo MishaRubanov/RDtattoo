@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import matplotlib
 import matplotlib.axes
@@ -87,11 +87,11 @@ class RDSimulatorBase(BaseModel):
     height: int
     steps: int
     t: float = 0
-    a: FloatArrayType
-    b: FloatArrayType
+    _a: FloatArrayType
+    _b: FloatArrayType
 
     def model_post_init(self, __context: Any) -> None:
-        self.a, self.b = generate_2random_2darrays(self.height, self.width)
+        self._a, self._b = generate_2random_2darrays(self.height, self.width)
 
     def update(self):
         for _ in range(self.steps):
@@ -99,26 +99,26 @@ class RDSimulatorBase(BaseModel):
             self._update()
 
     def _update(self):
-        assert self.a is not None
-        assert self.b is not None
-        La = laplacian2D(self.a, self.dx)
-        Lb = laplacian2D(self.b, self.dx)
+        assert self._a is not None
+        assert self._b is not None
+        La = laplacian2D(self._a, self.dx)
+        Lb = laplacian2D(self._b, self.dx)
 
-        delta_a = self.dt * (self.Da * La + self.Ra(self.a, self.b, self.alpha))
-        delta_b = self.dt * (self.Db * Lb + self.Rb(self.a, self.b, self.beta))
-        self.a += delta_a
-        self.b += delta_b
+        delta_a = self.dt * (self.Da * La + self.Ra(self._a, self._b, self.alpha))
+        delta_b = self.dt * (self.Db * Lb + self.Rb(self._a, self._b, self.beta))
+        self._a += delta_a
+        self._b += delta_b
 
     def draw(self, ax: tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]):
         ax[0].clear()
         ax[1].clear()
-        assert type(self.a) is FloatArrayType
-        assert type(self.b) is FloatArrayType
-        assert isinstance(self.a, np.ndarray), "self.a must be a numpy array"
-        assert isinstance(self.b, np.ndarray), "self.b must be a numpy array"
+        assert type(self._a) is FloatArrayType
+        assert type(self._b) is FloatArrayType
+        assert isinstance(self._a, np.ndarray), "self._a must be a numpy array"
+        assert isinstance(self._b, np.ndarray), "self._b must be a numpy array"
 
-        ax[0].imshow(X=self.a, dtype=np.float64, cmap="jet")  # type: ignore[reportUnknownMemberType]
-        ax[1].imshow(self.b, cmap="brg")  # type: ignore[reportUnknownMemberType]
+        ax[0].imshow(X=self._a, dtype=np.float64, cmap="jet")  # type: ignore[reportUnknownMemberType]
+        ax[1].imshow(self._b, cmap="brg")  # type: ignore[reportUnknownMemberType]
 
         ax[0].set_title("A, t = {:.2f}".format(self.t))  # type: ignore[reportUnknownMemberType]
         ax[1].set_title("B, t = {:.2f}".format(self.t))  # type: ignore[reportUnknownMemberType]

@@ -6,6 +6,7 @@ import matplotlib
 import matplotlib.axes
 import numpy as np
 import numpy.typing as npt
+import plotly.graph_objects as go
 import scipy  # type: ignore[import]
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
@@ -176,3 +177,94 @@ class RDSimulatorBase(BaseModel):
         plt.tight_layout()
         plt.show()
         return fig, axes
+
+    def plot_side_by_side_animation(self, n_frames: int, interval: int = 100):
+        fig = go.Figure()
+        frames = []
+
+        for i in range(n_frames):
+            self.update()  # Update the simulator state
+            frame = go.Frame(
+                data=[
+                    go.Heatmap(
+                        z=self.a,
+                        colorscale="Viridis",
+                        zmin=0,
+                        zmax=1,
+                        showscale=False,
+                    ),
+                    go.Heatmap(
+                        z=self.b,
+                        colorscale="Viridis",
+                        zmin=0,
+                        zmax=1,
+                        showscale=False,
+                    ),
+                ],
+                name=f"frame_{i}",
+            )
+            frames.append(frame)
+
+        fig.add_trace(
+            go.Heatmap(
+                z=self.a,
+                colorscale="Viridis",
+                zmin=0,
+                zmax=1,
+                showscale=False,
+            )
+        )
+
+        fig.add_trace(
+            go.Heatmap(
+                z=self.b,
+                colorscale="Viridis",
+                zmin=0,
+                zmax=1,
+                showscale=False,
+            )
+        )
+
+        fig.update_layout(
+            title="Side by Side Animation",
+            updatemenus=[
+                {
+                    "buttons": [
+                        {
+                            "args": [
+                                None,
+                                {
+                                    "frame": {"duration": interval, "redraw": True},
+                                    "fromcurrent": True,
+                                },
+                            ],
+                            "label": "Play",
+                            "method": "animate",
+                        },
+                        {
+                            "args": [
+                                [None],
+                                {
+                                    "frame": {"duration": 0, "redraw": True},
+                                    "mode": "immediate",
+                                    "transition": {"duration": 0},
+                                },
+                            ],
+                            "label": "Pause",
+                            "method": "animate",
+                        },
+                    ]
+                }
+            ],
+            xaxis=dict(domain=[0.05, 0.48]),
+            yaxis=dict(domain=[0.05, 0.9]),
+            xaxis2=dict(domain=[0.52, 0.95]),
+            yaxis2=dict(domain=[0.05, 0.9]),
+            showlegend=False,
+        )
+
+        fig.frames = frames
+        fig.data[0].update(xaxis="x", yaxis="y")
+        fig.data[1].update(xaxis="x2", yaxis="y2")
+
+        fig.show()

@@ -179,26 +179,32 @@ class RDSimulatorBase(BaseModel):
         return fig, axes
 
     def plot_side_by_side_animation(self, n_frames: int, interval: int = 100):
-        fig = go.Figure()
-        frames = []
 
+        fig = go.Figure()
+
+        frames = []
         for i in range(n_frames):
-            self.update()  # Update the simulator state
+            for _ in range(self.steps):
+                self.update()  # Update the simulator state
             frame = go.Frame(
                 data=[
                     go.Heatmap(
                         z=self.a,
-                        colorscale="Viridis",
+                        colorscale="Inferno",
                         zmin=0,
                         zmax=1,
                         showscale=False,
+                        xaxis="x",
+                        yaxis="y",
                     ),
                     go.Heatmap(
                         z=self.b,
-                        colorscale="Viridis",
+                        colorscale="Inferno",
                         zmin=0,
                         zmax=1,
                         showscale=False,
+                        xaxis="x2",
+                        yaxis="y2",
                     ),
                 ],
                 name=f"frame_{i}",
@@ -208,20 +214,24 @@ class RDSimulatorBase(BaseModel):
         fig.add_trace(
             go.Heatmap(
                 z=self.a,
-                colorscale="Viridis",
+                colorscale="Inferno",
                 zmin=0,
                 zmax=1,
                 showscale=False,
+                xaxis="x",
+                yaxis="y",
             )
         )
 
         fig.add_trace(
             go.Heatmap(
                 z=self.b,
-                colorscale="Viridis",
+                colorscale="Inferno",
                 zmin=0,
                 zmax=1,
                 showscale=False,
+                xaxis="x2",
+                yaxis="y2",
             )
         )
 
@@ -245,7 +255,7 @@ class RDSimulatorBase(BaseModel):
                             "args": [
                                 [None],
                                 {
-                                    "frame": {"duration": 0, "redraw": True},
+                                    "frame": {"duration": 0, "redraw": False},
                                     "mode": "immediate",
                                     "transition": {"duration": 0},
                                 },
@@ -253,18 +263,56 @@ class RDSimulatorBase(BaseModel):
                             "label": "Pause",
                             "method": "animate",
                         },
-                    ]
+                    ],
+                    "direction": "left",
+                    "pad": {"r": 10, "t": 87},
+                    "showactive": False,
+                    "type": "buttons",
+                    "x": 0.1,
+                    "xanchor": "right",
+                    "y": 0,
+                    "yanchor": "top",
                 }
             ],
-            xaxis=dict(domain=[0.05, 0.48]),
-            yaxis=dict(domain=[0.05, 0.9]),
-            xaxis2=dict(domain=[0.52, 0.95]),
-            yaxis2=dict(domain=[0.05, 0.9]),
+            sliders=[
+                {
+                    "active": 0,
+                    "yanchor": "top",
+                    "xanchor": "left",
+                    "currentvalue": {
+                        "font": {"size": 20},
+                        "prefix": "Frame:",
+                        "visible": True,
+                        "xanchor": "right",
+                    },
+                    "transition": {"duration": interval, "easing": "cubic-in-out"},
+                    "pad": {"b": 10, "t": 50},
+                    "len": 0.9,
+                    "x": 0.1,
+                    "y": 0,
+                    "steps": [
+                        {
+                            "args": [
+                                [f"frame_{k}"],
+                                {
+                                    "frame": {"duration": interval, "redraw": True},
+                                    "mode": "immediate",
+                                    "transition": {"duration": interval},
+                                },
+                            ],
+                            "label": str(k),
+                            "method": "animate",
+                        }
+                        for k in range(n_frames)
+                    ],
+                }
+            ],
+            xaxis=dict(domain=[0.0, 0.45]),
+            yaxis=dict(domain=[0.0, 0.9]),
+            xaxis2=dict(domain=[0.55, 1.0]),
+            yaxis2=dict(domain=[0.0, 0.9]),
             showlegend=False,
         )
 
         fig.frames = frames
-        fig.data[0].update(xaxis="x", yaxis="y")
-        fig.data[1].update(xaxis="x2", yaxis="y2")
-
         fig.show()

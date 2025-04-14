@@ -48,5 +48,5 @@ jobs:
         destination-username: 'MishaRubanov'
         destination-branch: main
         destination-repository: 'MishaRubanov.github.io'
-        destination-directory: '/jupyter'
+        destination-directory: '/_jupyter'
         commit-email: 'misha.rubanov.1@gmail.com'

@@ -1,12 +1,14 @@
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
+import cmcrameri.cm as cmc  # type: ignore[import]
 import matplotlib
 import matplotlib.axes
 import numpy as np
 import numpy.typing as npt
 import scipy  # type: ignore[import]
 from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
 from pydantic import BaseModel
 
 FloatArrayType = npt.NDArray[np.float64]
@@ -39,29 +41,29 @@ def generate_2random_2darrays(
     )
 
 
-# def laplacian2D(a, dx):
-#     return (
-#         -4 * a
-#         + np.roll(a, 1, axis=0)
-#         + np.roll(a, -1, axis=0)
-#         + np.roll(a, +1, axis=1)
-#         + np.roll(a, -1, axis=1)
-#     ) / (dx**2)
-
-
 def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
-    # Laplacian kernel
-    laplacian_kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
+    return (
+        -4 * a
+        + np.roll(a, 1, axis=0)
+        + np.roll(a, -1, axis=0)
+        + np.roll(a, +1, axis=1)
+        + np.roll(a, -1, axis=1)
+    ) / (dx**2)
 
-    # Convolve the input array with the Laplacian kernel
-    laplacian_a: FloatArrayType = scipy.ndimage.convolve(
-        a, laplacian_kernel, mode="reflect"
-    )
 
-    # Normalize by dx^2
-    laplacian_b: FloatArrayType = (laplacian_a / dx**2).astype(np.float64)
+# def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
+#     # Laplacian kernel
+#     laplacian_kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
 
-    return laplacian_b
+#     # Convolve the input array with the Laplacian kernel
+#     laplacian_a: FloatArrayType = scipy.ndimage.convolve(
+#         a, laplacian_kernel, mode="reflect"
+#     )
+
+#     # Normalize by dx^2
+#     laplacian_b: FloatArrayType = (laplacian_a / dx**2).astype(np.float64)
+
+#     return laplacian_b
 
 
 def Ra(a: FloatArrayType, b: FloatArrayType, alpha: float) -> FloatArrayType:
@@ -87,11 +89,20 @@ class RDSimulatorBase(BaseModel):
     height: int
     steps: int
     t: float = 0
-    _a: FloatArrayType
-    _b: FloatArrayType
+    a: Optional[FloatArrayType] = None
+    b: Optional[FloatArrayType] = None
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def generate_normal_array(self, loc: float, scale: float) -> FloatArrayType:
+        return np.random.normal(loc=loc, scale=scale, size=(self.height, self.width))
 
     def model_post_init(self, __context: Any) -> None:
-        self._a, self._b = generate_2random_2darrays(self.height, self.width)
+        if self.a is None:
+            self.a = self.generate_normal_array(loc=0, scale=0.05)
+        if self.b is None:
+            self.b = self.generate_normal_array(loc=0, scale=0.05)
 
     def update(self):
         for _ in range(self.steps):
@@ -99,24 +110,24 @@ class RDSimulatorBase(BaseModel):
             self._update()
 
     def _update(self):
-        assert self._a is not None
-        assert self._b is not None
-        La = laplacian2D(self._a, self.dx)
-        Lb = laplacian2D(self._b, self.dx)
+        assert self.a is not None
+        assert self.b is not None
+        La = laplacian2D(self.a, self.dx)
+        Lb = laplacian2D(self.b, self.dx)
 
-        delta_a = self.dt * (self.Da * La + self.Ra(self._a, self._b, self.alpha))
-        delta_b = self.dt * (self.Db * Lb + self.Rb(self._a, self._b, self.beta))
-        self._a += delta_a
-        self._b += delta_b
+        delta_a = self.dt * (self.Da * La + self.Ra(self.a, self.b, self.alpha))
+        delta_b = self.dt * (self.Db * Lb + self.Rb(self.a, self.b, self.beta))
+        self.a += delta_a
+        self.b += delta_b
 
     def draw(self, ax: tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]):
         ax[0].clear()
         ax[1].clear()
-        assert isinstance(self._a, np.ndarray), "self._a must be a numpy array"
-        assert isinstance(self._b, np.ndarray), "self._b must be a numpy array"
+        assert isinstance(self.a, np.ndarray), "self.a must be a numpy array"
+        assert isinstance(self.b, np.ndarray), "self.b must be a numpy array"
 
-        ax[0].imshow(X=self._a, cmap="jet")  # type: ignore[reportUnknownMemberType]
-        ax[1].imshow(self._b, cmap="brg")  # type: ignore[reportUnknownMemberType]
+        ax[0].imshow(X=self.a, cmap="jet")  # type: ignore[reportUnknownMemberType]
+        ax[1].imshow(self.b, cmap="brg")  # type: ignore[reportUnknownMemberType]
 
         ax[0].set_title("A, t = {:.2f}".format(self.t))  # type: ignore[reportUnknownMemberType]
         ax[1].set_title("B, t = {:.2f}".format(self.t))  # type: ignore[reportUnknownMemberType]
@@ -137,3 +148,31 @@ class RDSimulatorBase(BaseModel):
         self.draw(ax)
         fig.savefig(filename)  # type: ignore[reportUnknownMemberType]
         plt.close()
+
+    def plot_side_by_side(
+        self,
+        title1: str = "molecule a",
+        title2: str = "molecule b",
+    ) -> tuple[Figure, matplotlib.axes.Axes]:
+        """
+        Plot two images side by side.
+
+        Args:
+            array1 (FloatArrayType): First image array.
+            array2 (FloatArrayType): Second image array.
+            title1 (str): Title for the first image.
+            title2 (str): Title for the second image.
+        """
+        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+        axes[0].imshow(self.a, cmap=cmc.oslo)
+        axes[0].set_title(title1)
+        axes[0].axis("off")  # Hide axis
+
+        axes[1].imshow(self.b, cmap=cmc.lajolla)
+        axes[1].set_title(title2)
+        axes[1].axis("off")  # Hide axis
+
+        plt.tight_layout()
+        plt.show()
+        return fig, axes

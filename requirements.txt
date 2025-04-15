@@ -22,6 +22,8 @@ jupyter_core==5.7.2
 kiwisolver==1.4.8
 matplotlib==3.10.1
 matplotlib-inline==0.1.7
+mypy==1.15.0
+mypy-extensions==1.0.0
 narwhals==1.34.1
 nbformat==5.10.4
 nest-asyncio==1.6.0

@@ -43,28 +43,18 @@ def generate_2random_2darrays(
 
 
 def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
-    return (
-        -4 * a
-        + np.roll(a, 1, axis=0)
-        + np.roll(a, -1, axis=0)
-        + np.roll(a, +1, axis=1)
-        + np.roll(a, -1, axis=1)
-    ) / (dx**2)
+    # Laplacian kernel
+    laplacian_kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
 
+    # Convolve the input array with the Laplacian kernel
+    laplacian_a: FloatArrayType = scipy.ndimage.convolve(
+        a, laplacian_kernel, mode="reflect"
+    )
 
-# def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
-#     # Laplacian kernel
-#     laplacian_kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
+    # Normalize by dx^2
+    laplacian_b: FloatArrayType = (laplacian_a / dx**2).astype(np.float64)
 
-#     # Convolve the input array with the Laplacian kernel
-#     laplacian_a: FloatArrayType = scipy.ndimage.convolve(
-#         a, laplacian_kernel, mode="reflect"
-#     )
-
-#     # Normalize by dx^2
-#     laplacian_b: FloatArrayType = (laplacian_a / dx**2).astype(np.float64)
-
-#     return laplacian_b
+    return laplacian_b
 
 
 def Ra(a: FloatArrayType, b: FloatArrayType, alpha: float) -> FloatArrayType:

@@ -71,12 +71,12 @@ class RDSimulatorBase(BaseModel):
     def run(
         self, a: FloatArrayType, b: FloatArrayType
     ) -> tuple[FloatArrayType, FloatArrayType, float]:
-        run_a = np.expand_dims(np.array(a), axis=2)
-        run_b = np.expand_dims(np.array(b), axis=2)
+        run_a = np.array(a)
+        run_b = np.array(b)
         t: float = 0
-        for i in range(1, self.steps + 1):  # account for 0th array
+        for _ in range(self.steps):
             t += self.dt
-            run_a[:, :, i], run_b[:, :, 1] = self._run(run_a, run_b)
+            run_a, run_b = self._run(run_a, run_b)
         return run_a, run_b, t
 
     def _run(

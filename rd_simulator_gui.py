@@ -1,6 +1,6 @@
+import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
-from matplotlib import pyplot as plt
 
 from plotly_colorscales import oslo, turku
 from tattoo_functions import RDSimulatorBase
@@ -16,6 +16,7 @@ default_sim = RDSimulatorBase(
     width=100,
     height=100,
     steps=10000,
+    frames=100,
 )
 
 # Streamlit inputs for dynamic parameters
@@ -35,7 +36,9 @@ height = st.sidebar.number_input(
 steps = st.sidebar.number_input(
     "Steps", min_value=1, max_value=100000, value=default_sim.steps
 )
-
+frames = st.sidebar.number_input(
+    "Frames", min_value=1, max_value=100, value=default_sim.frames
+)
 # Create a new RDSimulatorBase with the selected parameters
 sim = RDSimulatorBase(
     Da=Da,
@@ -47,10 +50,11 @@ sim = RDSimulatorBase(
     width=width,
     height=height,
     steps=steps,
+    frames=frames,
 )
 
 # UI elements
-st.title("Reaction-Diffusion Simulator")
+st.title("Tattoo RD Simulator :sewing_needle:")
 st.write("Adjust the parameters in the sidebar and click 'Run Simulation'")
 
 # Initialize arrays
@@ -58,42 +62,58 @@ a_initial = sim.generate_normal_array(0, 0.05)
 b_initial = sim.generate_normal_array(0, 0.05)
 
 if st.button("Run Simulation"):
-    st.write("Running simulation...")
-    a_result, b_result, elapsed_time = sim.run(a_initial, b_initial)
-    st.write(f"Simulation took {elapsed_time:.2f} steps")
+    st.session_state["simulation_results"] = sim.run(a_initial, b_initial)
+    st.write("Simulation completed")
 
-    col1, col2 = st.columns(2)
+# Initialize placeholders to avoid key errors before running the simulation
+if "simulation_results" not in st.session_state:
+    st.session_state["simulation_results"] = (
+        0,
+        np.zeros((1, sim.height, sim.width)),
+        np.zeros((1, sim.height, sim.width)),
+    )
 
-    with col1:
-        st.write("Final 'a' state")
-        fig1 = go.Figure()
+elapsed_time, a_frames, b_frames = st.session_state["simulation_results"]
 
-        fig1.add_trace(
-            go.Heatmap(
-                z=a_result,
-                colorscale=oslo,
-                zmin=0,
-                zmax=1,
-                showscale=False,
-                xaxis="x",
-                yaxis="y",
-            )
+st.write(f"Simulation took {elapsed_time:.2f} steps" if elapsed_time != 0 else "")
+
+if len(a_frames) > 1:
+    frame_slider = st.slider("Frame", 0, len(a_frames) - 1, 0)
+else:
+    frame_slider = 0
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.write("State 'a'")
+    fig1 = go.Figure()
+
+    fig1.add_trace(
+        go.Heatmap(
+            z=a_frames[frame_slider],
+            colorscale=oslo,
+            zmin=0,
+            zmax=1,
+            showscale=False,
+            xaxis="x",
+            yaxis="y",
         )
-        st.plotly_chart(fig1)
+    )
+    st.plotly_chart(fig1)
 
-    with col2:
-        st.write("Final 'b' state")
-        fig2 = go.Figure()
+with col2:
+    st.write("State 'b'")
+    fig2 = go.Figure()
 
-        fig2.add_trace(
-            go.Heatmap(
-                z=a_result,
-                colorscale=turku,
-                zmin=0,
-                zmax=1,
-                showscale=False,
-                xaxis="x",
-                yaxis="y",
-            )
+    fig2.add_trace(
+        go.Heatmap(
+            z=b_frames[frame_slider],
+            colorscale=turku,
+            zmin=0,
+            zmax=1,
+            showscale=False,
+            xaxis="x",
+            yaxis="y",
         )
-        st.plotly_chart(fig2)
+    )
+    st.plotly_chart(fig2)

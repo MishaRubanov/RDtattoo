@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import numpy.typing as npt
 import scipy  # type: ignore[import]
@@ -47,6 +49,10 @@ class RDSimulatorBase(BaseModel):
     width: int
     height: int
     steps: int
+    frames: int
+
+    def model_post_init(self, context: Any) -> None:
+        assert self.frames < self.steps, "frames must be lower than steps"
 
     def Ra(self, a: FloatArrayType, b: FloatArrayType) -> FloatArrayType:
         r: FloatArrayType = a - a**3 - b + self.alpha
@@ -61,14 +67,31 @@ class RDSimulatorBase(BaseModel):
 
     def run(
         self, a: FloatArrayType, b: FloatArrayType
-    ) -> tuple[FloatArrayType, FloatArrayType, float]:
+    ) -> tuple[float, FloatArrayType, FloatArrayType]:
         run_a = np.array(a)
         run_b = np.array(b)
         t: float = 0
-        for _ in range(self.steps):
+
+        # Calculate the frame interval and round to the nearest integer
+        frame_interval = max(1, round(self.steps / self.frames))
+
+        # Initialize the 3D arrays to store the frames
+        a_frames = np.zeros((self.frames, self.height, self.width), dtype=np.float64)
+        b_frames = np.zeros((self.frames, self.height, self.width), dtype=np.float64)
+
+        frame_index: int = 0
+
+        for step in range(self.steps):
             t += self.dt
             run_a, run_b = self._run(run_a, run_b)
-        return run_a, run_b, t
+
+            # Store the frame every frame_interval steps
+            if step % frame_interval == 0 and frame_index < self.frames:
+                a_frames[frame_index, :, :] = run_a
+                b_frames[frame_index, :, :] = run_b
+                frame_index += 1
+
+        return t, a_frames, b_frames
 
     def _run(
         self, a: FloatArrayType, b: FloatArrayType

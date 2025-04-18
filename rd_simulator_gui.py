@@ -1,9 +1,22 @@
+import typing
+
 import numpy as np
 import streamlit as st
 
 import tattoo_plotter as tp
 from plotly_colorscales import oslo, turku
-from tattoo_functions import RDSimulatorBase
+from tattoo_functions import FloatArrayType, RDSimulatorBase
+
+
+def run_simulation(
+    sim: RDSimulatorBase, a_initial: FloatArrayType, b_initial: FloatArrayType
+):
+    st.session_state["simulation_results"] = sim.run(a_initial, b_initial)
+    st.write("Simulation completed")
+
+
+typed_oslo = typing.cast(list[tuple[float, str]], oslo)
+typed_turku = typing.cast(list[tuple[float, str]], turku)
 
 # Initialize the RDSimulatorBase with defaults
 default_sim = RDSimulatorBase(
@@ -19,14 +32,19 @@ default_sim = RDSimulatorBase(
     frames=100,
 )
 
+
+# Initialize arrays
+a_initial = default_sim.generate_normal_array(0, 0.05)
+b_initial = default_sim.generate_normal_array(0, 0.05)
+
 # Streamlit inputs for dynamic parameters
 st.sidebar.header("Simulation Parameters")
 Da = st.sidebar.slider("Da", 0.0, 5.0, default_sim.Da)
-Db = st.sidebar.slider("Db", 0.0, 5.0, default_sim.Db)
+Db = st.sidebar.slider("Db", 0.0, 500.0, default_sim.Db)
 alpha = st.sidebar.slider("Alpha", -2.0, 2.0, default_sim.alpha)
 beta = st.sidebar.slider("Beta", 0.0, 10.0, default_sim.beta)
 dx = st.sidebar.slider("dx", 0.01, 1.0, default_sim.dx)
-dt = st.sidebar.slider("dt", 0.01, 2.0, default_sim.dt)
+
 width = st.sidebar.number_input(
     "Width", min_value=10, max_value=500, value=default_sim.width
 )
@@ -46,7 +64,7 @@ sim = RDSimulatorBase(
     alpha=alpha,
     beta=beta,
     dx=dx,
-    dt=dt,
+    dt=default_sim.dt,
     width=width,
     height=height,
     steps=steps,
@@ -57,13 +75,9 @@ sim = RDSimulatorBase(
 st.title("Tattoo RD Simulator :sewing_needle:")
 st.write("Adjust the parameters in the sidebar and click 'Run Simulation'")
 
-# Initialize arrays
-a_initial = sim.generate_normal_array(0, 0.05)
-b_initial = sim.generate_normal_array(0, 0.05)
 
 if st.button("Run Simulation"):
-    st.session_state["simulation_results"] = sim.run(a_initial, b_initial)
-    st.write("Simulation completed")
+    run_simulation(sim=sim, a_initial=a_initial, b_initial=b_initial)
 
 # Initialize placeholders to avoid key errors before running the simulation
 if "simulation_results" not in st.session_state:
@@ -79,8 +93,8 @@ st.write(f"Simulation took {elapsed_time:.2f} steps" if elapsed_time != 0 else "
 
 
 # Create figures with animation frames and annotations
-fig1 = tp.create_plotly_figure(a_frames, oslo, initial_frame=0)
-fig2 = tp.create_plotly_figure(b_frames, turku, initial_frame=0)
+fig1 = tp.create_plotly_figure(a_frames, typed_oslo, initial_frame=0)
+fig2 = tp.create_plotly_figure(b_frames, typed_turku, initial_frame=0)
 
 col1, col2 = st.columns(2)
 

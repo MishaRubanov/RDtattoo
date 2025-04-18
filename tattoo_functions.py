@@ -20,6 +20,9 @@ def normalize(image: FloatArrayType) -> FloatArrayType:
     """
     min_val = image.min()
     max_val = image.max()
+    # Avoid division by zero
+    if max_val == min_val:
+        return np.zeros_like(image)
     normalized_image: FloatArrayType = (image - min_val) / (max_val - min_val)
     return normalized_image
 

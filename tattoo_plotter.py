@@ -1,11 +1,11 @@
 import plotly.graph_objects as go
 
-from tattoo_functions import FloatArrayType, RDSimulatorBase, normalize
+from tattoo_functions import FloatArrayType, normalize
 
 
 # Helper function to create animation frames for Plotly with annotations
 def create_animation_frames(
-    frames_data: list[FloatArrayType], colorscale: str
+    frames_data: list[FloatArrayType], colorscale: list[tuple[float, str]]
 ) -> list[go.Frame]:
     frames = []
     for i, frame_data in enumerate(frames_data):
@@ -41,7 +41,9 @@ def create_animation_frames(
 
 # Helper function to create the Plotly figure with play/pause buttons and frame annotation
 def create_plotly_figure(
-    frames_data: FloatArrayType, colorscale: str, initial_frame: int
+    frames_data: list[FloatArrayType],
+    colorscale: list[tuple[float, str]],
+    initial_frame: int,
 ) -> go.Figure:
     fig = go.Figure(
         data=[

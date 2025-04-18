@@ -5,11 +5,11 @@ import streamlit as st
 
 import tattoo_plotter as tp
 from plotly_colorscales import oslo, turku
-from tattoo_functions import FloatArrayType, RDSimulatorBase
+from tattoo_functions import FloatArrayType, RDSimulator
 
 
 def run_simulation(
-    sim: RDSimulatorBase, a_initial: FloatArrayType, b_initial: FloatArrayType
+    sim: RDSimulator, a_initial: FloatArrayType, b_initial: FloatArrayType
 ):
     st.session_state["simulation_results"] = sim.run(a_initial, b_initial)
     st.write("Simulation completed")
@@ -18,8 +18,8 @@ def run_simulation(
 typed_oslo = typing.cast(list[tuple[float, str]], oslo)
 typed_turku = typing.cast(list[tuple[float, str]], turku)
 
-# Initialize the RDSimulatorBase with defaults
-default_sim = RDSimulatorBase(
+# Initialize the RDSimulator with defaults
+default_sim = RDSimulator(
     Da=1.0,
     Db=199,
     alpha=-0.005,
@@ -31,11 +31,6 @@ default_sim = RDSimulatorBase(
     steps=10000,
     frames=100,
 )
-
-
-# Initialize arrays
-a_initial = default_sim.generate_normal_array(0, 0.05)
-b_initial = default_sim.generate_normal_array(0, 0.05)
 
 # Streamlit inputs for dynamic parameters
 st.sidebar.header("Simulation Parameters")
@@ -57,8 +52,8 @@ steps = st.sidebar.number_input(
 frames = st.sidebar.number_input(
     "Frames", min_value=1, max_value=100, value=default_sim.frames
 )
-# Create a new RDSimulatorBase with the selected parameters
-sim = RDSimulatorBase(
+# Create a new RDSimulator with the selected parameters
+sim = RDSimulator(
     Da=Da,
     Db=Db,
     alpha=alpha,
@@ -70,6 +65,12 @@ sim = RDSimulatorBase(
     steps=steps,
     frames=frames,
 )
+
+
+# Initialize arrays
+a_initial = sim.generate_normal_array(0, 0.05)
+b_initial = sim.generate_normal_array(0, 0.05)
+
 
 # UI elements
 st.title("Tattoo RD Simulator :sewing_needle:")

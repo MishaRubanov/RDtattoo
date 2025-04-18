@@ -42,7 +42,7 @@ def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
     return laplacian_b
 
 
-class RDSimulatorBase(BaseModel):
+class RDSimulator(BaseModel):
     Da: float
     Db: float
     alpha: float

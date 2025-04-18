@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from plotly_colorscales import oslo, turku
-from tattoo_functions import RDSimulatorBase
+from tattoo_functions import FloatArrayType, RDSimulatorBase, normalize
 
 # Initialize the RDSimulatorBase with defaults
 default_sim = RDSimulatorBase(
@@ -77,43 +77,117 @@ elapsed_time, a_frames, b_frames = st.session_state["simulation_results"]
 
 st.write(f"Simulation took {elapsed_time:.2f} steps" if elapsed_time != 0 else "")
 
-if len(a_frames) > 1:
-    frame_slider = st.slider("Frame", 0, len(a_frames) - 1, 0)
-else:
-    frame_slider = 0
+
+# Helper function to create animation frames for Plotly with annotations
+def create_animation_frames(
+    frames_data: FloatArrayType, colorscale: str
+) -> list[go.Frame]:
+    frames = []
+    for i, frame_data in enumerate(frames_data):
+        normalized_data = normalize(frame_data)
+        frames.append(
+            go.Frame(
+                data=[
+                    go.Heatmap(
+                        z=normalized_data,
+                        colorscale=colorscale,
+                        showscale=False,
+                    ),
+                ],
+                name=str(i),
+                layout=go.Layout(
+                    annotations=[
+                        go.layout.Annotation(
+                            text=f"Frame: {i}",
+                            x=0.5,
+                            y=1.05,
+                            showarrow=False,
+                            xref="paper",
+                            yref="paper",
+                            align="center",
+                            font=dict(size=12),
+                        )
+                    ]
+                ),
+            )
+        )
+    return frames
+
+
+# Helper function to create the Plotly figure with play/pause buttons and frame annotation
+def create_plotly_figure(
+    frames_data: FloatArrayType, colorscale: str, initial_frame: int
+) -> go.Figure:
+    fig = go.Figure(
+        data=[
+            go.Heatmap(
+                z=normalize(frames_data[initial_frame]),
+                colorscale=colorscale,
+                showscale=False,
+                xaxis="x",
+                yaxis="y",
+            ),
+        ],
+        layout=go.Layout(
+            annotations=[
+                go.layout.Annotation(
+                    text=f"Frame: {initial_frame}",
+                    x=0.5,
+                    y=1.05,
+                    showarrow=False,
+                    xref="paper",
+                    yref="paper",
+                    align="center",
+                    font=dict(size=12),
+                )
+            ],
+            updatemenus=[
+                dict(
+                    type="buttons",
+                    showactive=False,
+                    buttons=[
+                        dict(
+                            label="Play",
+                            method="animate",
+                            args=[
+                                None,
+                                {
+                                    "frame": {"duration": 50, "redraw": True},
+                                    "fromcurrent": True,
+                                    "mode": "immediate",
+                                },
+                            ],
+                        ),
+                        dict(
+                            label="Pause",
+                            method="animate",
+                            args=[
+                                [None],
+                                {
+                                    "frame": {"duration": 0, "redraw": False},
+                                    "mode": "immediate",
+                                },
+                            ],
+                        ),
+                    ],
+                )
+            ],
+        ),
+        frames=create_animation_frames(frames_data, colorscale),
+    )
+    return fig
+
+
+# Create figures with animation frames and annotations
+fig1 = create_plotly_figure(a_frames, oslo, initial_frame=0)
+fig2 = create_plotly_figure(b_frames, turku, initial_frame=0)
 
 col1, col2 = st.columns(2)
 
 with col1:
     st.write("State 'a'")
-    fig1 = go.Figure()
-
-    fig1.add_trace(
-        go.Heatmap(
-            z=a_frames[frame_slider],
-            colorscale=oslo,
-            zmin=0,
-            zmax=1,
-            showscale=False,
-            xaxis="x",
-            yaxis="y",
-        )
-    )
     st.plotly_chart(fig1)
 
 with col2:
     st.write("State 'b'")
-    fig2 = go.Figure()
-
-    fig2.add_trace(
-        go.Heatmap(
-            z=b_frames[frame_slider],
-            colorscale=turku,
-            zmin=0,
-            zmax=1,
-            showscale=False,
-            xaxis="x",
-            yaxis="y",
-        )
-    )
     st.plotly_chart(fig2)

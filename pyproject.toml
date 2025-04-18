@@ -94,3 +94,7 @@ dependencies = [
     "urllib3==2.4.0",
     "wcwidth==0.2.13"
 ]
+[tool.ruff]
+line-length=120
+[tool.ruff.lint]
+extend-select = ["E501"]

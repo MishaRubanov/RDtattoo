@@ -32,6 +32,9 @@ default_sim = RDSimulator(
     frames=100,
 )
 
+rd_fields = default_sim.model_fields_set
+rd_fields.remove("dt")
+
 # Streamlit inputs for dynamic parameters
 st.sidebar.header("Simulation Parameters")
 Da = st.sidebar.slider("Da", 0.0, 5.0, default_sim.Da)
@@ -91,7 +94,6 @@ if "simulation_results" not in st.session_state:
 elapsed_time, a_frames, b_frames = st.session_state["simulation_results"]
 
 st.write(f"Simulation took {elapsed_time:.2f} steps" if elapsed_time != 0 else "")
-
 
 # Create figures with animation frames and annotations
 fig1 = tp.create_plotly_figure(a_frames, typed_oslo, initial_frame=0)

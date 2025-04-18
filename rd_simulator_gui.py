@@ -15,7 +15,7 @@ default_sim = RDSimulatorBase(
     dt=0.001,
     width=100,
     height=100,
-    steps=20000,
+    steps=10000,
 )
 
 # Streamlit inputs for dynamic parameters
@@ -60,7 +60,7 @@ b_initial = sim.generate_normal_array(0, 0.05)
 if st.button("Run Simulation"):
     st.write("Running simulation...")
     a_result, b_result, elapsed_time = sim.run(a_initial, b_initial)
-    st.write(f"Simulation completed in {elapsed_time:.2f} units of time")
+    st.write(f"Simulation took {elapsed_time:.2f} steps")
 
     col1, col2 = st.columns(2)
 

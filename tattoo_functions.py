@@ -1,15 +1,6 @@
-from pathlib import Path
-from typing import Any, Callable, Optional
-
-import cmcrameri.cm as cmc  # type: ignore[import]
-import matplotlib
-import matplotlib.axes
 import numpy as np
 import numpy.typing as npt
-import plotly.graph_objects as go
 import scipy  # type: ignore[import]
-from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
 from pydantic import BaseModel
 
 FloatArrayType = npt.NDArray[np.float64]

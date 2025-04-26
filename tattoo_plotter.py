@@ -70,6 +70,21 @@ def create_plotly_figure(
             ),
         ],
         layout=go.Layout(
+            width=600,  # Set fixed width
+            height=600,  # Set fixed height to match width for square aspect ratio
+            paper_bgcolor="rgb(30, 30, 30)",  # Dark background for the entire figure
+            plot_bgcolor="rgb(30, 30, 30)",  # Dark background for the plot area
+            font=dict(color="white"),  # White text for better contrast
+            xaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showticklabels=False,
+            ),
+            yaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showticklabels=False,
+            ),
             annotations=[
                 go.layout.Annotation(
                     text=f"Frame: {initial_frame}",
@@ -79,7 +94,7 @@ def create_plotly_figure(
                     xref="paper",
                     yref="paper",
                     align="center",
-                    font=dict(size=12),
+                    font=dict(size=12, color="white"),
                 )
             ],
             updatemenus=[

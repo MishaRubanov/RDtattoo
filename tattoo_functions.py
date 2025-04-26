@@ -1,10 +1,10 @@
 from enum import Enum
-from typing import Any, Protocol, Tuple, runtime_checkable
+from typing import Any, Protocol, Self, Tuple, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
 import scipy  # type: ignore[import]
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 FloatArrayType = npt.NDArray[np.float64]
 
@@ -19,6 +19,7 @@ class ReactionFunction(Protocol):
 class ReactionType(Enum):
     BRUSSELATOR = 1
     FITZHUGH_NAGUMO = 2
+    GRAY_SCOTT = 3
 
     @classmethod
     def get_reaction_functions(
@@ -28,6 +29,8 @@ class ReactionType(Enum):
             return BrusselatorA(), BrusselatorB()
         elif reaction_type == cls.FITZHUGH_NAGUMO:
             return FitzHughNagumoA(), FitzHughNagumoB()
+        elif reaction_type == cls.GRAY_SCOTT:
+            return GrayScottA(), GrayScottB()
 
 
 class BrusselatorA(ReactionFunction):
@@ -58,11 +61,18 @@ class FitzHughNagumoB(ReactionFunction):
         return beta * (a - b)
 
 
-# Create instances of the reaction functions
-brusselator_a = BrusselatorA()
-brusselator_b = BrusselatorB()
-fitzhugh_nagumo_a = FitzHughNagumoA()
-fitzhugh_nagumo_b = FitzHughNagumoB()
+class GrayScottA(ReactionFunction):
+    def __call__(
+        self, a: FloatArrayType, b: FloatArrayType, alpha: float, beta: float
+    ) -> FloatArrayType:
+        return (-a * (b**2)) + (alpha * (1 - a))
+
+
+class GrayScottB(ReactionFunction):
+    def __call__(
+        self, a: FloatArrayType, b: FloatArrayType, alpha: float, beta: float
+    ) -> FloatArrayType:
+        return (a * (b**2)) - ((alpha + beta) * b)
 
 
 def normalize(image: FloatArrayType) -> FloatArrayType:
@@ -102,22 +112,58 @@ def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
 class RDSimulator(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    Da: float
-    Db: float
-    alpha: float
-    beta: float
-    dx: float
-    dt: float
-    width: int
-    height: int
-    steps: int
-    frames: int
-    reaction_type: ReactionType = Field(default=ReactionType.FITZHUGH_NAGUMO)
+    Da: float = Field(
+        title="Diffusion Coefficient A",
+        description="Diffusion coefficient for species A",
+    )
+    Db: float = Field(
+        title="Diffusion Coefficient B",
+        description="Diffusion coefficient for species B",
+    )
+    alpha: float = Field(
+        title="Alpha Parameter",
+        description="First reaction parameter, controls the production rate of species A",
+    )
+    beta: float = Field(
+        title="Beta Parameter",
+        description="Second reaction parameter, controls the production rate of species B",
+    )
+    dx: float = Field(
+        title="Spatial Step Size",
+        description="Spatial step size for the discretization",
+    )
+    dt: float = Field(
+        title="Time Step Size",
+        description="Temporal step size for the time integration",
+    )
+    width: int = Field(
+        title="Grid Width", description="Number of grid points in the x-direction"
+    )
+    height: int = Field(
+        title="Grid Height", description="Number of grid points in the y-direction"
+    )
+    steps: int = Field(
+        title="Simulation Steps", description="Total number of time steps to simulate"
+    )
+    frames: int = Field(
+        title="Output Frames",
+        description="Number of frames to save during the simulation",
+    )
+    reaction_type: ReactionType = Field(
+        title="Reaction Type",
+        default=ReactionType.FITZHUGH_NAGUMO,
+        description="Type of reaction-diffusion system to simulate",
+    )
     _reaction_a: ReactionFunction = PrivateAttr(default_factory=FitzHughNagumoA)
     _reaction_b: ReactionFunction = PrivateAttr(default_factory=FitzHughNagumoB)
 
+    @model_validator(mode="after")
+    def validate_frames_steps(self) -> Self:
+        if self.frames >= self.steps:
+            raise ValueError("frames must be lower than steps")
+        return self
+
     def model_post_init(self, context: Any) -> None:
-        assert self.frames < self.steps, "frames must be lower than steps"
         self._initialize_reactions()
 
     def _initialize_reactions(self) -> None:

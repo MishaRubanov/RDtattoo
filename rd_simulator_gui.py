@@ -5,7 +5,12 @@ import streamlit as st
 
 import tattoo_plotter as tp
 from plotly_colorscales import oslo, turku
-from tattoo_functions import FloatArrayType, RDSimulator
+from tattoo_functions import (
+    DefaultRDSimulatorConfig,
+    FloatArrayType,
+    RDSimulator,
+    ReactionType,
+)
 
 
 def run_simulation(
@@ -19,24 +24,28 @@ typed_oslo = typing.cast(list[tuple[float, str]], oslo)
 typed_turku = typing.cast(list[tuple[float, str]], turku)
 
 # Initialize the RDSimulator with defaults
-default_sim = RDSimulator(
-    Da=1.0,
-    Db=199,
-    alpha=-0.005,
-    beta=10,
-    dx=1,
-    dt=0.001,
-    width=100,
-    height=100,
-    steps=10000,
-    frames=100,
-)
+default_config = DefaultRDSimulatorConfig.get_fitzhugh_nagumo_config()
+default_sim = RDSimulator(**default_config)
 
 rd_fields = default_sim.model_fields_set
 rd_fields.remove("dt")
 
 # Streamlit inputs for dynamic parameters
 st.sidebar.header("Simulation Parameters")
+
+# Add reaction type selector
+reaction_type = st.sidebar.selectbox(
+    "Reaction Type",
+    options=list(ReactionType),
+    format_func=lambda x: x.name.replace("_", " ").title(),
+    index=list(ReactionType).index(default_sim.reaction_type),
+)
+
+# Update default values if reaction type changes
+if reaction_type != default_sim.reaction_type:
+    default_config = DefaultRDSimulatorConfig.get_config(reaction_type)
+    default_sim = RDSimulator(**default_config)
+
 Da = st.sidebar.slider("Da", 0.0, 5.0, default_sim.Da)
 Db = st.sidebar.slider("Db", 0.0, 500.0, default_sim.Db)
 alpha = st.sidebar.slider("Alpha", -2.0, 2.0, default_sim.alpha)
@@ -55,6 +64,7 @@ steps = st.sidebar.number_input(
 frames = st.sidebar.number_input(
     "Frames", min_value=1, max_value=100, value=default_sim.frames
 )
+
 # Create a new RDSimulator with the selected parameters
 sim = RDSimulator(
     Da=Da,
@@ -67,6 +77,7 @@ sim = RDSimulator(
     height=height,
     steps=steps,
     frames=frames,
+    reaction_type=reaction_type,
 )
 
 

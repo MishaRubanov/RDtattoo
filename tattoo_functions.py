@@ -1,11 +1,68 @@
-from typing import Any
+from enum import Enum
+from typing import Any, Protocol, Tuple, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
 import scipy  # type: ignore[import]
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 FloatArrayType = npt.NDArray[np.float64]
+
+
+@runtime_checkable
+class ReactionFunction(Protocol):
+    def __call__(
+        self, a: FloatArrayType, b: FloatArrayType, alpha: float, beta: float
+    ) -> FloatArrayType: ...
+
+
+class ReactionType(Enum):
+    BRUSSELATOR = 1
+    FITZHUGH_NAGUMO = 2
+
+    @classmethod
+    def get_reaction_functions(
+        cls, reaction_type: "ReactionType"
+    ) -> Tuple[ReactionFunction, ReactionFunction]:
+        if reaction_type == cls.BRUSSELATOR:
+            return BrusselatorA(), BrusselatorB()
+        elif reaction_type == cls.FITZHUGH_NAGUMO:
+            return FitzHughNagumoA(), FitzHughNagumoB()
+
+
+class BrusselatorA(ReactionFunction):
+    def __call__(
+        self, a: FloatArrayType, b: FloatArrayType, alpha: float, beta: float
+    ) -> FloatArrayType:
+        return alpha - (1 + beta) * a + b * (a**2)
+
+
+class BrusselatorB(ReactionFunction):
+    def __call__(
+        self, a: FloatArrayType, b: FloatArrayType, alpha: float, beta: float
+    ) -> FloatArrayType:
+        return b * beta - beta * (b**2)
+
+
+class FitzHughNagumoA(ReactionFunction):
+    def __call__(
+        self, a: FloatArrayType, b: FloatArrayType, alpha: float, beta: float
+    ) -> FloatArrayType:
+        return a - a**3 - b + alpha
+
+
+class FitzHughNagumoB(ReactionFunction):
+    def __call__(
+        self, a: FloatArrayType, b: FloatArrayType, alpha: float, beta: float
+    ) -> FloatArrayType:
+        return beta * (a - b)
+
+
+# Create instances of the reaction functions
+brusselator_a = BrusselatorA()
+brusselator_b = BrusselatorB()
+fitzhugh_nagumo_a = FitzHughNagumoA()
+fitzhugh_nagumo_b = FitzHughNagumoB()
 
 
 def normalize(image: FloatArrayType) -> FloatArrayType:
@@ -43,6 +100,8 @@ def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
 
 
 class RDSimulator(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     Da: float
     Db: float
     alpha: float
@@ -53,17 +112,26 @@ class RDSimulator(BaseModel):
     height: int
     steps: int
     frames: int
+    reaction_type: ReactionType = Field(default=ReactionType.FITZHUGH_NAGUMO)
+    _reaction_a: ReactionFunction = PrivateAttr(default_factory=FitzHughNagumoA)
+    _reaction_b: ReactionFunction = PrivateAttr(default_factory=FitzHughNagumoB)
 
     def model_post_init(self, context: Any) -> None:
         assert self.frames < self.steps, "frames must be lower than steps"
+        self._initialize_reactions()
 
-    def Ra(self, a: FloatArrayType, b: FloatArrayType) -> FloatArrayType:
-        r: FloatArrayType = a - a**3 - b + self.alpha
-        return r
+    def _initialize_reactions(self) -> None:
+        self._reaction_a, self._reaction_b = ReactionType.get_reaction_functions(
+            self.reaction_type
+        )
 
-    def Rb(self, a: FloatArrayType, b: FloatArrayType) -> FloatArrayType:
-        r: FloatArrayType = (a - b) * self.beta
-        return r
+    @property
+    def reaction_a(self) -> ReactionFunction:
+        return self._reaction_a
+
+    @property
+    def reaction_b(self) -> ReactionFunction:
+        return self._reaction_b
 
     def generate_normal_array(self, loc: float, scale: float) -> FloatArrayType:
         return np.random.normal(loc=loc, scale=scale, size=(self.height, self.width))
@@ -102,8 +170,12 @@ class RDSimulator(BaseModel):
         La = laplacian2D(a, self.dx)
         Lb = laplacian2D(b, self.dx)
 
-        delta_a = self.dt * (self.Da * La + self.Ra(a, b))
-        delta_b = self.dt * (self.Db * Lb + self.Rb(a, b))
+        delta_a = self.dt * (
+            self.Da * La + self.reaction_a(a, b, self.alpha, self.beta)
+        )
+        delta_b = self.dt * (
+            self.Db * Lb + self.reaction_b(a, b, self.alpha, self.beta)
+        )
         a += delta_a
         b += delta_b
         return a, b

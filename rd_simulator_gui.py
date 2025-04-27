@@ -1,16 +1,23 @@
 import typing
+from typing import Any
 
 import numpy as np
 import streamlit as st
 
+import array_generator as ag
 import tattoo_plotter as tp
 from plotly_colorscales import oslo, turku
-from tattoo_functions import (
-    DefaultRDSimulatorConfig,
-    FloatArrayType,
-    RDSimulator,
-    ReactionType,
+from rd_defaults import (
+    brusselator_default,
+    fitzhugh_nagumo_default,
+    grayscott_worm_default,
+    model_equations,
 )
+from tattoo_functions import FloatArrayType, RDSimulator
+
+st.set_page_config(layout="wide")
+st.sidebar.header("Simulation Parameters")
+st.title("Reaction-Diffusion Simulator :sewing_needle:")
 
 
 def run_simulation(
@@ -23,78 +30,136 @@ def run_simulation(
 typed_oslo = typing.cast(list[tuple[float, str]], oslo)
 typed_turku = typing.cast(list[tuple[float, str]], turku)
 
-# Initialize the RDSimulator with defaults
-default_config = DefaultRDSimulatorConfig.get_fitzhugh_nagumo_config()
-default_sim = RDSimulator(**default_config)
+# Define available default simulators
+default_simulators = {
+    "Fitzhugh-Nagumo": fitzhugh_nagumo_default,
+    "Gray-Scott (Worm)": grayscott_worm_default,
+    "Brusselator": brusselator_default,
+}
 
-rd_fields = default_sim.model_fields_set
-rd_fields.remove("dt")
 
-# Streamlit inputs for dynamic parameters
-st.sidebar.header("Simulation Parameters")
-
-# Add reaction type selector
-reaction_type = st.sidebar.selectbox(
-    "Reaction Type",
-    options=list(ReactionType),
-    format_func=lambda x: x.name.replace("_", " ").title(),
-    index=list(ReactionType).index(default_sim.reaction_type),
+selected_model = st.selectbox(
+    "Reaction-Diffusion Model and Default Parameters",
+    options=list(default_simulators.keys()),
+    index=0,  # Default to Fitzhugh-Nagumo
 )
 
-# Update default values if reaction type changes
-if reaction_type != default_sim.reaction_type:
-    default_config = DefaultRDSimulatorConfig.get_config(reaction_type)
-    default_sim = RDSimulator(**default_config)
+st.markdown(model_equations[selected_model])
 
-Da = st.sidebar.slider("Da", 0.0, 5.0, default_sim.Da)
-Db = st.sidebar.slider("Db", 0.0, 500.0, default_sim.Db)
-alpha = st.sidebar.slider("Alpha", -2.0, 2.0, default_sim.alpha)
-beta = st.sidebar.slider("Beta", 0.0, 10.0, default_sim.beta)
-dx = st.sidebar.slider("dx", 0.01, 1.0, default_sim.dx)
+default_sim = default_simulators[selected_model]
 
-width = st.sidebar.number_input(
-    "Width", min_value=10, max_value=500, value=default_sim.width
-)
-height = st.sidebar.number_input(
-    "Height", min_value=10, max_value=500, value=default_sim.height
-)
-steps = st.sidebar.number_input(
-    "Steps", min_value=1, max_value=100000, value=default_sim.steps
-)
-frames = st.sidebar.number_input(
-    "Frames", min_value=1, max_value=100, value=default_sim.frames
-)
 
+def generate_number_inputs(default_sim: RDSimulator) -> dict[str, Any]:
+    """
+    Generate number inputs for each parameter of the simulator.
+
+    Parameters:
+    -----------
+    default_sim : RDSimulator
+        The default simulator to use as a base
+
+    Returns:
+    --------
+    dict[str, Any]
+        Dictionary of parameter values from user inputs
+    """
+    default_params = default_sim.model_dump()
+    user_inputs = {}
+
+    # Map parameter names to mathematical notation
+    param_labels = {
+        "Da": "D_u (Diffusion coefficient of activator)",
+        "Db": "D_v (Diffusion coefficient of inhibitor)",
+        "alpha": "α (First reaction parameter)",
+        "beta": "β (Second reaction parameter)",
+        "dx": "Δx (Spatial step size)",
+        "dt": "Δt (Time step size)",
+        "width": "Width (Grid points in x-direction)",
+        "height": "Height (Grid points in y-direction)",
+        "steps": "Steps (Total simulation steps)",
+        "frames": "Frames (Output frames to save)",
+    }
+
+    for param, value in default_params.items():
+        if isinstance(value, (int, float)):
+            # Handle zero or negative values
+            if value <= 0:
+                value = 1e-10  # Small positive value
+
+            # Calculate min and max values for the range
+            if value != 0:
+                min_val = value / 100  # 2 orders of magnitude below
+                max_val = value * 100  # 2 orders of magnitude above
+            else:
+                min_val = 1e-10
+                max_val = 1e10
+
+            # Format the label with the default value
+            label = f"{param_labels.get(param, param)} (default: {value})"
+
+            # Create number input with appropriate step size
+            if isinstance(value, int):
+                # For integers, use integer step
+                user_inputs[param] = st.sidebar.number_input(
+                    label=label,
+                    min_value=float(min_val),
+                    max_value=float(max_val),
+                    value=float(value),
+                    step=1.0,
+                )
+            elif isinstance(value, float):
+                # For floats, use smaller step
+                user_inputs[param] = st.sidebar.number_input(
+                    label=label,
+                    min_value=float(min_val),
+                    max_value=float(max_val),
+                    value=float(value),
+                    step=0.1,
+                )
+        else:
+            # For non-numeric parameters, just store the value
+            user_inputs[param] = value
+
+    return user_inputs
+
+
+user_inputs = generate_number_inputs(default_sim)
 # Create a new RDSimulator with the selected parameters
-sim = RDSimulator(
-    Da=Da,
-    Db=Db,
-    alpha=alpha,
-    beta=beta,
-    dx=dx,
-    dt=default_sim.dt,
-    width=width,
-    height=height,
-    steps=steps,
-    frames=frames,
-    reaction_type=reaction_type,
+sim = RDSimulator(**user_inputs)
+
+# Add initial condition selection
+initial_condition = st.selectbox(
+    "Initial Condition",
+    options=["Random Gaussian", "Pillar + Gaussian"],
+    index=0,
 )
 
+if initial_condition == "Normal":
+    a_initial = ag.random_normal_array(0, 0.05, sim.height, sim.width)
+    b_initial = ag.random_normal_array(0, 0.05, sim.height, sim.width)
+else:  # Pillar
+    a_initial = ag.generate_centered_pillar_with_noise(
+        height=sim.height,
+        width=sim.width,
+        pillar_size=40,
+        pillar_value=0.5,
+        noise_level=0.05,
+        background_value=1.0,
+    )
+    b_initial = ag.generate_centered_pillar_with_noise(
+        height=sim.height,
+        width=sim.width,
+        pillar_size=40,
+        pillar_value=0.25,
+        noise_level=0.05,
+        background_value=0.0,
+    )
 
-# Initialize arrays
-a_initial = sim.generate_normal_array(0, 0.05)
-b_initial = sim.generate_normal_array(0, 0.05)
-
-
-# UI elements
-st.title("Tattoo RD Simulator :sewing_needle:")
 st.write("Adjust the parameters in the sidebar and click 'Run Simulation'")
-
 
 if st.button("Run Simulation"):
     run_simulation(sim=sim, a_initial=a_initial, b_initial=b_initial)
 
-# Initialize placeholders to avoid key errors before running the simulation
 if "simulation_results" not in st.session_state:
     st.session_state["simulation_results"] = (
         0,
@@ -104,18 +169,19 @@ if "simulation_results" not in st.session_state:
 
 elapsed_time, a_frames, b_frames = st.session_state["simulation_results"]
 
-st.write(f"Simulation took {elapsed_time:.2f} steps" if elapsed_time != 0 else "")
+st.write(
+    f"Simulation was run for {elapsed_time:.2f} steps" if elapsed_time != 0 else ""
+)
 
-# Create figures with animation frames and annotations
 fig1 = tp.create_plotly_figure(a_frames, typed_oslo, initial_frame=0)
 fig2 = tp.create_plotly_figure(b_frames, typed_turku, initial_frame=0)
 
 col1, col2 = st.columns(2)
 
 with col1:
-    st.write("State 'a'")
+    st.write("State A")
     st.plotly_chart(fig1)
 
 with col2:
-    st.write("State 'b'")
+    st.write("State B")
     st.plotly_chart(fig2)

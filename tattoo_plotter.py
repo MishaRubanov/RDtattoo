@@ -128,6 +128,32 @@ def create_plotly_figure(
                     ],
                 )
             ],
+            sliders=[
+                dict(
+                    active=initial_frame,
+                    currentvalue={
+                        "prefix": "Frame: ",
+                        "visible": True,
+                        "xanchor": "right",
+                    },
+                    pad={"t": 50},
+                    steps=[
+                        dict(
+                            method="animate",
+                            args=[
+                                [str(i)],
+                                dict(
+                                    mode="immediate",
+                                    frame=dict(duration=0, redraw=True),
+                                    transition=dict(duration=0),
+                                ),
+                            ],
+                            label=str(i),
+                        )
+                        for i in range(len(frames_data))
+                    ],
+                )
+            ],
         ),
         frames=create_animation_frames(frames_data, colorscale),
     )

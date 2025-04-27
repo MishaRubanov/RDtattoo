@@ -37,14 +37,14 @@ class BrusselatorA(ReactionFunction):
     def __call__(
         self, a: FloatArrayType, b: FloatArrayType, alpha: float, beta: float
     ) -> FloatArrayType:
-        return alpha - (1 + beta) * a + b * (a**2)
+        return alpha - ((1 + beta) * a) + (b * (a**2))
 
 
 class BrusselatorB(ReactionFunction):
     def __call__(
         self, a: FloatArrayType, b: FloatArrayType, alpha: float, beta: float
     ) -> FloatArrayType:
-        return b * beta - beta * (b**2)
+        return (beta * a) - ((a**2) * b)
 
 
 class FitzHughNagumoA(ReactionFunction):

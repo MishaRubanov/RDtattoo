@@ -179,9 +179,6 @@ class RDSimulator(BaseModel):
     def reaction_b(self) -> ReactionFunction:
         return self._reaction_b
 
-    def generate_normal_array(self, loc: float, scale: float) -> FloatArrayType:
-        return np.random.normal(loc=loc, scale=scale, size=(self.height, self.width))
-
     def run(
         self, a: FloatArrayType, b: FloatArrayType
     ) -> tuple[float, FloatArrayType, FloatArrayType]:
@@ -189,10 +186,8 @@ class RDSimulator(BaseModel):
         run_b = np.array(b)
         t: float = 0
 
-        # Calculate the frame interval and round to the nearest integer
         frame_interval = max(1, round(self.steps / self.frames))
 
-        # Initialize the 3D arrays to store the frames
         a_frames = np.zeros((self.frames, self.height, self.width), dtype=np.float64)
         b_frames = np.zeros((self.frames, self.height, self.width), dtype=np.float64)
 

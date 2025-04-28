@@ -10,8 +10,10 @@ from plotly_colorscales import oslo, turku
 from rd_defaults import (
     brusselator_default,
     fitzhugh_nagumo_default,
+    grayscott_bubble_default,
+    grayscott_coral_default,
     grayscott_worm_default,
-    model_equations,
+    model_descriptions,
 )
 from tattoo_functions import FloatArrayType, RDSimulator
 
@@ -34,6 +36,8 @@ typed_turku = typing.cast(list[tuple[float, str]], turku)
 default_simulators = {
     "Fitzhugh-Nagumo": fitzhugh_nagumo_default,
     "Gray-Scott (Worm)": grayscott_worm_default,
+    "Gray-Scott (Bubble)": grayscott_bubble_default,
+    "Gray-Scott (Coral)": grayscott_coral_default,
     "Brusselator": brusselator_default,
 }
 
@@ -44,7 +48,7 @@ selected_model = st.selectbox(
     index=0,  # Default to Fitzhugh-Nagumo
 )
 
-st.markdown(model_equations[selected_model])
+st.markdown(model_descriptions[selected_model])
 
 default_sim = default_simulators[selected_model]
 
@@ -66,7 +70,6 @@ def generate_number_inputs(default_sim: RDSimulator) -> dict[str, Any]:
     default_params = default_sim.model_dump()
     user_inputs = {}
 
-    # Map parameter names to mathematical notation
     param_labels = {
         "Da": "D_u (Diffusion coefficient of activator)",
         "Db": "D_v (Diffusion coefficient of inhibitor)",
@@ -82,24 +85,19 @@ def generate_number_inputs(default_sim: RDSimulator) -> dict[str, Any]:
 
     for param, value in default_params.items():
         if isinstance(value, (int, float)):
-            # Handle zero or negative values
             if value <= 0:
                 value = 1e-10  # Small positive value
 
-            # Calculate min and max values for the range
             if value != 0:
-                min_val = value / 100  # 2 orders of magnitude below
-                max_val = value * 100  # 2 orders of magnitude above
+                min_val = value / 100
+                max_val = value * 100
             else:
                 min_val = 1e-10
                 max_val = 1e10
 
-            # Format the label with the default value
             label = f"{param_labels.get(param, param)} (default: {value})"
 
-            # Create number input with appropriate step size
             if isinstance(value, int):
-                # For integers, use integer step
                 user_inputs[param] = st.sidebar.number_input(
                     label=label,
                     min_value=float(min_val),
@@ -134,10 +132,10 @@ initial_condition = st.selectbox(
     index=0,
 )
 
-if initial_condition == "Normal":
+if initial_condition == "Random Gaussian":
     a_initial = ag.random_normal_array(0, 0.05, sim.height, sim.width)
     b_initial = ag.random_normal_array(0, 0.05, sim.height, sim.width)
-else:  # Pillar
+elif initial_condition == "Pillar + Gaussian":
     a_initial = ag.generate_centered_pillar_with_noise(
         height=sim.height,
         width=sim.width,
@@ -157,8 +155,11 @@ else:  # Pillar
 
 st.write("Adjust the parameters in the sidebar and click 'Run Simulation'")
 
-if st.button("Run Simulation"):
-    run_simulation(sim=sim, a_initial=a_initial, b_initial=b_initial)
+# Create a centered container for the button
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    if st.button("Run Simulation", use_container_width=True):
+        run_simulation(sim=sim, a_initial=a_initial, b_initial=b_initial)
 
 if "simulation_results" not in st.session_state:
     st.session_state["simulation_results"] = (

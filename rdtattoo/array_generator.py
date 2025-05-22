@@ -1,6 +1,6 @@
 import numpy as np
 
-from tattoo_functions import FloatArrayType
+from rdtattoo.tattoo_functions import FloatArrayType
 
 
 def random_normal_array(

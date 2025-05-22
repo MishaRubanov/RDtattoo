@@ -4,10 +4,10 @@ from typing import Any
 import numpy as np
 import streamlit as st
 
-import array_generator as ag
-import tattoo_plotter as tp
-from plotly_colorscales import oslo, turku
-from rd_defaults import (
+from rdtattoo import array_generator as ag
+from rdtattoo import tattoo_plotter as tp
+from rdtattoo.plotly_colorscales import oslo, turku
+from rdtattoo.rd_defaults import (
     brusselator_default,
     fitzhugh_nagumo_default,
     grayscott_bubble_default,
@@ -15,7 +15,7 @@ from rd_defaults import (
     grayscott_worm_default,
     model_descriptions,
 )
-from tattoo_functions import FloatArrayType, RDSimulator
+from rdtattoo.tattoo_functions import FloatArrayType, RDSimulator
 
 st.set_page_config(layout="wide")
 st.sidebar.header("Simulation Parameters")

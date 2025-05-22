@@ -1,6 +1,6 @@
 import plotly.graph_objects as go
 
-from tattoo_functions import FloatArrayType, normalize
+from rdtattoo.tattoo_functions import FloatArrayType, normalize
 
 
 # Helper function to create animation frames for Plotly with annotations

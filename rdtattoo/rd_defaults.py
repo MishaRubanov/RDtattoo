@@ -1,6 +1,6 @@
 # Extracted from https://www.ijcce.ac.ir/article_6365_96f54ec0054f8d47df4af016b668c360.pdf
 # Here's another https://www.aliensaint.com/uo/java/rd/
-from tattoo_functions import RDSimulator, ReactionType
+from rdtattoo.tattoo_functions import RDSimulator, ReactionType
 
 grayscott_worm_default = RDSimulator(
     Da=0.16,

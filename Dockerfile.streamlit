@@ -11,19 +11,20 @@ RUN apt-get update && apt-get install -y \
 
 COPY . .
 
-RUN ls -la /app && \
-    ls -la /app/rdtattoo
-
 RUN pip install --no-cache-dir -r requirements.txt && \
     pip install -e .
 
-RUN python -c "import sys; print(sys.path)" && \
-    python -c "import rdtattoo; print(rdtattoo.__file__)"
+ENV PYTHONPATH=/app:/usr/local/lib/python3.13/site-packages
+
+RUN echo "=== Python Path ===" && \
+    python -c "import sys; print('\n'.join(sys.path))" && \
+    echo "\n=== Package Location ===" && \
+    python -c "import rdtattoo; print(rdtattoo.__file__)" && \
+    echo "\n=== Environment Variables ===" && \
+    env | grep PYTHONPATH
 
 EXPOSE 8501
 
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
-
-ENV PYTHONPATH=/app
 
 ENTRYPOINT ["streamlit", "run", "/app/rdtattoo/rd_simulator_gui.py", "--server.port=8501", "--server.address=0.0.0.0"] 

@@ -1,7 +1,5 @@
-# Use the official Jupyter base image
 FROM quay.io/jupyter/base-notebook
 
-# Set working directory
 WORKDIR /home/jovyan/work
 
 # Copy the entire repository
@@ -11,10 +9,7 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt && \
     pip install -e .
 
-# Copy the notebook file
-COPY tattoo.ipynb .
 
-# Expose port for Jupyter
 EXPOSE 8888
 
 # Set environment variables

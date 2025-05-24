@@ -27,4 +27,15 @@ EXPOSE 8501
 
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
-ENTRYPOINT ["streamlit", "run", "rdtattoo/rd_simulator_gui.py", "--server.port=8501", "--server.address=0.0.0.0"] 
+# Create a debug script
+RUN echo '#!/bin/bash\n\
+echo "Current directory: $(pwd)"\n\
+echo "Listing /app:"\n\
+ls -la /app\n\
+echo "Listing /app/rdtattoo:"\n\
+ls -la /app/rdtattoo\n\
+echo "Running Streamlit with debug..."\n\
+streamlit run rdtattoo/rd_simulator_gui.py --server.port=8501 --server.address=0.0.0.0 --logger.level=debug' > /app/run.sh && \
+    chmod +x /app/run.sh
+
+ENTRYPOINT ["/app/run.sh"] 

@@ -1,19 +1,9 @@
 FROM quay.io/jupyter/base-notebook
-
 WORKDIR /home/jovyan/work
-
-# Copy the entire repository
 COPY . .
-
-# Install Python dependencies and the local package in editable mode
 RUN pip install --no-cache-dir -r requirements.txt && \
     pip install -e .
-
-
 EXPOSE 8888
-
-# Set environment variables
 ENV JUPYTER_ENABLE_LAB=yes
-
-# Start Jupyter notebook
+RUN echo "tattoosarefun" | jupyter notebook password
 CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"] 

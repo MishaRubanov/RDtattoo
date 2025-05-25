@@ -6,6 +6,12 @@ import streamlit as st
 
 from rdtattoo import array_generator as ag
 from rdtattoo import tattoo_plotter as tp
+from rdtattoo.initial_conditions import (
+    InitialCondition,
+    InitialConditionType,
+    PillarGaussianParams,
+    RandomGaussianParams,
+)
 from rdtattoo.plotly_colorscales import oslo, turku
 from rdtattoo.rd_defaults import (
     brusselator_default,
@@ -126,32 +132,28 @@ user_inputs = generate_number_inputs(default_sim)
 sim = RDSimulator(**user_inputs)
 
 # Add initial condition selection
-initial_condition = st.selectbox(
+initial_condition_type = st.selectbox(
     "Initial Condition",
-    options=["Random Gaussian", "Pillar + Gaussian"],
+    options=[ic.value for ic in InitialConditionType],
     index=0,
 )
 
-if initial_condition == "Random Gaussian":
-    a_initial = ag.random_normal_array(0, 0.05, sim.height, sim.width)
-    b_initial = ag.random_normal_array(0, 0.05, sim.height, sim.width)
-elif initial_condition == "Pillar + Gaussian":
-    a_initial = ag.generate_centered_pillar_with_noise(
-        height=sim.height,
-        width=sim.width,
-        pillar_size=40,
-        pillar_value=0.5,
-        noise_level=0.05,
-        background_value=1.0,
-    )
-    b_initial = ag.generate_centered_pillar_with_noise(
-        height=sim.height,
-        width=sim.width,
-        pillar_size=40,
-        pillar_value=0.25,
-        noise_level=0.05,
-        background_value=0.0,
-    )
+# Create appropriate parameter object based on selected type
+if InitialConditionType(initial_condition_type) == InitialConditionType.RANDOM_GAUSSIAN:
+    params = RandomGaussianParams()
+else:
+    params = PillarGaussianParams()
+
+# Create initial condition object
+initial_condition = InitialCondition(
+    condition_type=InitialConditionType(initial_condition_type),
+    height=sim.height,
+    width=sim.width,
+    params=params,
+)
+
+# Generate initial conditions
+a_initial, b_initial = initial_condition.generate()
 
 st.write("Adjust the parameters in the sidebar and click 'Run Simulation'")
 

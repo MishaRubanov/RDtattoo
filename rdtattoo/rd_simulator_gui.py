@@ -176,15 +176,7 @@ st.write(
     f"Simulation was run for {elapsed_time:.2f} steps" if elapsed_time != 0 else ""
 )
 
-fig1 = tp.create_plotly_figure(a_frames, typed_oslo, initial_frame=0)
-fig2 = tp.create_plotly_figure(b_frames, typed_turku, initial_frame=0)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.write("State A")
-    st.plotly_chart(fig1)
-
-with col2:
-    st.write("State B")
-    st.plotly_chart(fig2)
+# Create a single figure for species A
+fig = tp.create_plotly_figure(a_frames, typed_oslo, initial_frame=0)
+st.write("Molecule A")
+st.plotly_chart(fig)

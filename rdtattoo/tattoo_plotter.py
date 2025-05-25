@@ -79,11 +79,15 @@ def create_plotly_figure(
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
+                scaleanchor="y",  # Link x and y axis scales
+                constrain="domain",  # Constrain the domain to maintain aspect ratio
             ),
             yaxis=dict(
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
+                scaleanchor="x",  # Link x and y axis scales
+                constrain="domain",  # Constrain the domain to maintain aspect ratio
             ),
             annotations=[
                 go.layout.Annotation(

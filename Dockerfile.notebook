@@ -5,7 +5,6 @@ RUN pip install --no-cache-dir -r requirements.txt && \
     pip install -e .
 EXPOSE 8888
 ENV JUPYTER_ENABLE_LAB=yes
-RUN python -c "from jupyter_server.auth import passwd; print(passwd('tattoosarefun'))" > /tmp/jupyter_password.txt && \
-    echo "c.NotebookApp.password = open('/tmp/jupyter_password.txt').read().strip()" >> /home/jovyan/.jupyter/jupyter_notebook_config.py && \
-    echo "c.NotebookApp.token = ''" >> /home/jovyan/.jupyter/jupyter_notebook_config.py
+RUN jupyter notebook --generate-config && \
+    echo "c.NotebookApp.password='argon2:$argon2id$v=19$m=10240,t=10,p=8$W/YoaK1HmUWy4ITRrMArwg$3s7sDEPluB2Cp97GURa1+cs0L4/uNruSYE9uXjjYxCA'" >> /home/jovyan/.jupyter/jupyter_notebook_config.py
 CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"] 

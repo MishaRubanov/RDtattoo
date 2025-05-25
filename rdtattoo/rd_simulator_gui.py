@@ -1,10 +1,9 @@
 import typing
-from typing import Any
+from typing import Any, Union
 
 import numpy as np
 import streamlit as st
 
-from rdtattoo import array_generator as ag
 from rdtattoo import tattoo_plotter as tp
 from rdtattoo.initial_conditions import (
     InitialCondition,
@@ -139,6 +138,7 @@ initial_condition_type = st.selectbox(
 )
 
 # Create appropriate parameter object based on selected type
+params: Union[RandomGaussianParams, PillarGaussianParams]
 if InitialConditionType(initial_condition_type) == InitialConditionType.RANDOM_GAUSSIAN:
     params = RandomGaussianParams()
 else:

@@ -3,13 +3,16 @@ This module implements a reaction-diffusion system simulator with various reacti
 It provides classes and functions for simulating different reaction-diffusion patterns
 that can be used to generate artistic patterns or study chemical reactions.
 
+Notes
+-----
 To add a new reaction type:
 1. Add a new enum value to ReactionType
 2. Create two new classes implementing ReactionFunction (one for each species)
 3. Add the new reaction functions to ReactionType.get_reaction_functions()
 4. Add default parameters to rd_defaults.py
 
-Example of adding a new reaction type:
+Example
+-------
 ```python
 # In ReactionType enum:
 MY_REACTION = 4
@@ -38,6 +41,7 @@ MY_REACTION_DEFAULTS = {
     "beta": 0.5,
     ...
 }
+```
 """
 
 from enum import Enum
@@ -58,8 +62,9 @@ class ReactionFunction(Protocol):
     A reaction function calculates the rate of change for a chemical species
     based on the current concentrations of both species and reaction parameters.
 
-    Methods:
-        __call__: Calculate the reaction rate for a species.
+    Methods
+    -------
+    __call__ : Calculate the reaction rate for a species.
     """
 
     def __call__(
@@ -72,19 +77,17 @@ class ReactionType(Enum):
 
     Each reaction type represents a different chemical reaction system with its own
     mathematical equations and behavior patterns.
-
-    Values:
-        BRUSSELATOR: The Brusselator model, a theoretical model for a type of
-            autocatalytic reaction.
-        FITZHUGH_NAGUMO: The FitzHugh-Nagumo model, a simplified model of
-            neuron behavior.
-        GRAY_SCOTT: The Gray-Scott model, a reaction-diffusion system that can
-            produce various patterns.
     """
 
     BRUSSELATOR = 1
+    """The Brusselator model, a theoretical model for a type of autocatalytic reaction."""
+
     FITZHUGH_NAGUMO = 2
+    """The FitzHugh-Nagumo model, a simplified model of neuron behavior."""
+
     GRAY_SCOTT = 3
+    """The Gray-Scott model, a reaction-diffusion system that models consistent feeding,
+    consumption, and reproduction of two species."""
 
     @classmethod
     def get_reaction_functions(
@@ -92,15 +95,21 @@ class ReactionType(Enum):
     ) -> Tuple[ReactionFunction, ReactionFunction]:
         """Get the reaction functions for a specific reaction type.
 
-        Args:
-            reaction_type: The type of reaction system to get functions for.
+        Parameters
+        ----------
+        reaction_type : ReactionType
+            The type of reaction system to get functions for.
 
-        Returns:
+        Returns
+        -------
+        tuple[ReactionFunction, ReactionFunction]
             A tuple containing two ReactionFunction instances, one for each
             chemical species (A and B) in the reaction system.
 
-        Raises:
-            ValueError: If an invalid reaction type is provided.
+        Raises
+        ------
+        ValueError
+            If an invalid reaction type is provided.
         """
         if reaction_type == cls.BRUSSELATOR:
             return BrusselatorA(), BrusselatorB()
@@ -118,6 +127,22 @@ class BrusselatorA(ReactionFunction):
     The Brusselator is a theoretical model for a type of autocatalytic reaction.
     This class implements the reaction function for species A:
     dA/dt = α - (1 + β)A + BA²
+
+    Parameters
+    ----------
+    a : FloatArrayType
+        Concentration field for species A.
+    b : FloatArrayType
+        Concentration field for species B.
+    alpha : float
+        First reaction parameter.
+    beta : float
+        Second reaction parameter.
+
+    Returns
+    -------
+    FloatArrayType
+        The reaction rate for species A.
     """
 
     def __call__(
@@ -131,6 +156,22 @@ class BrusselatorB(ReactionFunction):
 
     This class implements the reaction function for species B:
     dB/dt = βA - BA²
+
+    Parameters
+    ----------
+    a : FloatArrayType
+        Concentration field for species A.
+    b : FloatArrayType
+        Concentration field for species B.
+    alpha : float
+        First reaction parameter.
+    beta : float
+        Second reaction parameter.
+
+    Returns
+    -------
+    FloatArrayType
+        The reaction rate for species B.
     """
 
     def __call__(
@@ -145,6 +186,22 @@ class FitzHughNagumoA(ReactionFunction):
     The FitzHugh-Nagumo model is a simplified model of neuron behavior.
     This class implements the reaction function for species A:
     dA/dt = A - A³ - B + α
+
+    Parameters
+    ----------
+    a : FloatArrayType
+        Concentration field for species A.
+    b : FloatArrayType
+        Concentration field for species B.
+    alpha : float
+        First reaction parameter.
+    beta : float
+        Second reaction parameter.
+
+    Returns
+    -------
+    FloatArrayType
+        The reaction rate for species A.
     """
 
     def __call__(
@@ -158,6 +215,22 @@ class FitzHughNagumoB(ReactionFunction):
 
     This class implements the reaction function for species B:
     dB/dt = β(A - B)
+
+    Parameters
+    ----------
+    a : FloatArrayType
+        Concentration field for species A.
+    b : FloatArrayType
+        Concentration field for species B.
+    alpha : float
+        First reaction parameter.
+    beta : float
+        Second reaction parameter.
+
+    Returns
+    -------
+    FloatArrayType
+        The reaction rate for species B.
     """
 
     def __call__(
@@ -172,6 +245,22 @@ class GrayScottA(ReactionFunction):
     The Gray-Scott model is a reaction-diffusion system that can produce
     various patterns. This class implements the reaction function for species A:
     dA/dt = -AB² + α(1 - A)
+
+    Parameters
+    ----------
+    a : FloatArrayType
+        Concentration field for species A.
+    b : FloatArrayType
+        Concentration field for species B.
+    alpha : float
+        First reaction parameter.
+    beta : float
+        Second reaction parameter.
+
+    Returns
+    -------
+    FloatArrayType
+        The reaction rate for species A.
     """
 
     def __call__(
@@ -185,6 +274,22 @@ class GrayScottB(ReactionFunction):
 
     This class implements the reaction function for species B:
     dB/dt = AB² - (α + β)B
+
+    Parameters
+    ----------
+    a : FloatArrayType
+        Concentration field for species A.
+    b : FloatArrayType
+        Concentration field for species B.
+    alpha : float
+        First reaction parameter.
+    beta : float
+        Second reaction parameter.
+
+    Returns
+    -------
+    FloatArrayType
+        The reaction rate for species B.
     """
 
     def __call__(
@@ -199,10 +304,14 @@ def normalize(image: FloatArrayType) -> FloatArrayType:
     This function scales the input array so that its values span the range [0, 1].
     If all values are the same, returns an array of zeros.
 
-    Args:
-        image: The input array to be normalized.
+    Parameters
+    ----------
+    image : FloatArrayType
+        The input array to be normalized.
 
-    Returns:
+    Returns
+    -------
+    FloatArrayType
         The normalized array with values between 0 and 1.
     """
     min_val = image.min()
@@ -220,11 +329,16 @@ def laplacian2D(a: FloatArrayType, dx: float) -> FloatArrayType:
     This function computes the discrete Laplacian operator using a 3x3 kernel
     and normalizes by the spatial step size squared.
 
-    Args:
-        a: The input array to compute the Laplacian for.
-        dx: The spatial step size.
+    Parameters
+    ----------
+    a : FloatArrayType
+        The input array to compute the Laplacian for.
+    dx : float
+        The spatial step size.
 
-    Returns:
+    Returns
+    -------
+    FloatArrayType
         The Laplacian of the input array.
     """
     # Laplacian kernel
@@ -248,18 +362,30 @@ class RDSimulator(BaseModel):
     using the finite difference method. It supports multiple reaction types
     and can save simulation frames for visualization.
 
-    Attributes:
-        Da: Diffusion coefficient for species A.
-        Db: Diffusion coefficient for species B.
-        alpha: First reaction parameter.
-        beta: Second reaction parameter.
-        dx: Spatial step size for the discretization.
-        dt: Temporal step size for the time integration.
-        width: Number of grid points in the x-direction.
-        height: Number of grid points in the y-direction.
-        steps: Total number of time steps to simulate.
-        frames: Number of frames to save during the simulation.
-        reaction_type: Type of reaction-diffusion system to simulate.
+    Attributes
+    ----------
+    Da : float
+        Diffusion coefficient for species A.
+    Db : float
+        Diffusion coefficient for species B.
+    alpha : float
+        First reaction parameter.
+    beta : float
+        Second reaction parameter.
+    dx : float
+        Spatial step size for the discretization.
+    dt : float
+        Temporal step size for the time integration.
+    width : int
+        Number of grid points in the x-direction.
+    height : int
+        Number of grid points in the y-direction.
+    steps : int
+        Total number of time steps to simulate.
+    frames : int
+        Number of frames to save during the simulation.
+    reaction_type : ReactionType
+        Type of reaction-diffusion system to simulate.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -313,11 +439,15 @@ class RDSimulator(BaseModel):
     def validate_frames_steps(self) -> Self:
         """Validate that the number of frames is less than the number of steps.
 
-        Returns:
+        Returns
+        -------
+        Self
             The validated model instance.
 
-        Raises:
-            ValueError: If frames >= steps.
+        Raises
+        ------
+        ValueError
+            If frames >= steps.
         """
         if self.frames >= self.steps:
             raise ValueError("frames must be lower than steps")
@@ -335,12 +465,24 @@ class RDSimulator(BaseModel):
 
     @property
     def reaction_a(self) -> ReactionFunction:
-        """Get the reaction function for species A."""
+        """Get the reaction function for species A.
+
+        Returns
+        -------
+        ReactionFunction
+            The reaction function for species A.
+        """
         return self._reaction_a
 
     @property
     def reaction_b(self) -> ReactionFunction:
-        """Get the reaction function for species B."""
+        """Get the reaction function for species B.
+
+        Returns
+        -------
+        ReactionFunction
+            The reaction function for species B.
+        """
         return self._reaction_b
 
     def run(
@@ -348,11 +490,16 @@ class RDSimulator(BaseModel):
     ) -> tuple[float, FloatArrayType, FloatArrayType]:
         """Run the reaction-diffusion simulation.
 
-        Args:
-            a: Initial concentration field for species A.
-            b: Initial concentration field for species B.
+        Parameters
+        ----------
+        a : FloatArrayType
+            Initial concentration field for species A.
+        b : FloatArrayType
+            Initial concentration field for species B.
 
-        Returns:
+        Returns
+        -------
+        tuple[float, FloatArrayType, FloatArrayType]
             A tuple containing:
             - The final simulation time
             - Array of saved frames for species A
@@ -386,11 +533,16 @@ class RDSimulator(BaseModel):
     ) -> tuple[FloatArrayType, FloatArrayType]:
         """Perform a single time step of the simulation.
 
-        Args:
-            a: Current concentration field for species A.
-            b: Current concentration field for species B.
+        Parameters
+        ----------
+        a : FloatArrayType
+            Current concentration field for species A.
+        b : FloatArrayType
+            Current concentration field for species B.
 
-        Returns:
+        Returns
+        -------
+        tuple[FloatArrayType, FloatArrayType]
             Updated concentration fields for both species.
         """
         La = laplacian2D(a, self.dx)
